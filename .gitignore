@@ -1,0 +1,17 @@
+# Gradle and build output
+.gradle/
+build/
+/local.properties
+.kotlin/
+
+# IDE
+.idea/
+*.iml
+
+# Signing secrets (never commit)
+*.jks
+*.keystore
+keystore.properties
+
+# OS
+.DS_Store
