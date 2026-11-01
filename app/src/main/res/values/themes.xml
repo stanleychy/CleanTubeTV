@@ -10,4 +10,18 @@
         <item name="android:colorAccent">@color/accent</item>
         <item name="android:textColor">@color/text</item>
     </style>
+
+    <style name="Tab">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginEnd">12dp</item>
+        <item name="android:background">@drawable/tab_bg</item>
+        <item name="android:focusable">true</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:textColor">@color/tab_text</item>
+        <item name="android:textSize">18sp</item>
+    </style>
 </resources>

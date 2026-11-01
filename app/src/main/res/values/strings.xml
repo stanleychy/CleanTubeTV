@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">CleanTube TV</string>
+    <string name="tab_home">Home</string>
+    <string name="tab_subscriptions">Subscriptions</string>
+    <string name="tab_account">Account</string>
+    <string name="loading">Loading…</string>
+    <string name="empty_feed">No videos found.</string>
+    <string name="load_error">Could not load: %1$s</string>
+    <string name="play_error">Cannot play this video: %1$s</string>
+    <string name="sign_in_first">Sign in first. Go to the Account tab.</string>
+    <string name="account_signed_in">You are signed in. Press OK to sign out.</string>
+    <string name="account_signed_out">You are not signed in. Press OK to sign in.</string>
+    <string name="sign_in_step1">1. On your phone or computer, go to</string>
+    <string name="sign_in_step2">2. Enter this code</string>
+    <string name="sign_in_waiting">Waiting for you to approve…</string>
+    <string name="quality">Quality</string>
+    <string name="skipped_segment">Skipped segment: %1$s</string>
 </resources>
