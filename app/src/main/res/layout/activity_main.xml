@@ -15,24 +15,115 @@
         <TextView android:id="@+id/tab_home" style="@style/Tab" android:text="@string/tab_home" />
         <TextView android:id="@+id/tab_subs" style="@style/Tab" android:text="@string/tab_subscriptions" />
         <TextView android:id="@+id/tab_account" style="@style/Tab" android:text="@string/tab_account" />
+        <TextView android:id="@+id/tab_settings" style="@style/Tab" android:text="@string/tab_settings" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
-        android:background="@drawable/tab_bg"
-        android:padding="16dp"
-        android:textColor="@color/tab_text"
-        android:textSize="22sp" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/grid"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="16dp"
-        android:clipToPadding="false"
-        android:paddingBottom="48dp"
-        android:visibility="gone" />
+        android:layout_height="match_parent">
+
+        <!-- Status message, with an optional action button (for example "Sign In"). -->
+        <LinearLayout
+            android:id="@+id/message_panel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="48dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:textColor="@color/text"
+                android:textSize="22sp" />
+
+            <TextView
+                android:id="@+id/action_button"
+                style="@style/ActionButton"
+                android:layout_marginTop="24dp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/grid"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="16dp"
+            android:clipToPadding="false"
+            android:paddingBottom="48dp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/account_panel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="48dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp">
+
+                <ImageView
+                    android:id="@+id/account_photo"
+                    android:layout_width="96dp"
+                    android:layout_height="96dp"
+                    android:layout_marginEnd="24dp"
+                    android:contentDescription="@null"
+                    android:scaleType="centerCrop" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/account_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text"
+                        android:textSize="28sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/account_detail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/text_dim"
+                        android:textSize="20sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/account_button"
+                style="@style/ActionButton"
+                android:layout_marginTop="32dp" />
+        </LinearLayout>
+
+        <ScrollView
+            android:id="@+id/settings_panel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="32dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="48dp">
+
+                <TextView android:id="@+id/setting_history" style="@style/SettingRow" />
+                <TextView android:id="@+id/setting_speeds" style="@style/SettingRow" />
+                <TextView android:id="@+id/setting_audio" style="@style/SettingRow" />
+                <TextView android:id="@+id/setting_subtitles" style="@style/SettingRow" />
+            </LinearLayout>
+        </ScrollView>
+    </FrameLayout>
 </LinearLayout>
