@@ -1,5 +1,6 @@
 package io.github.stanleychy.cleantubetv.ui
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.net.Uri
 import android.os.Bundle
@@ -274,6 +275,8 @@ class PlayerActivity : Activity() {
         message.visibility = View.VISIBLE
     }
 
+    // Back is not intercepted: it goes to super unchanged. TVs have no predictive back gesture.
+    @SuppressLint("GestureBackNavigation")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_BACK) return super.dispatchKeyEvent(event)
         if (qualityButton.hasFocus()) return super.dispatchKeyEvent(event)
