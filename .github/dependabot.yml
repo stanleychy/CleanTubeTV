@@ -1,0 +1,14 @@
+# Dependabot updates only the pinned GitHub Actions.
+# Gradle dependencies are not included: each update needs new checksums in gradle/verification-metadata.xml
+# and a review by the maintainer (CONTRIBUTING.md).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]

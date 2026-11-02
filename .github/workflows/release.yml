@@ -1,0 +1,117 @@
+# Makes a signed release APK.
+# - Push a tag "vX.Y.Z" (the same as appVersion in app/build.gradle.kts): the workflow makes a DRAFT GitHub release.
+#   The maintainer checks the draft and publishes it.
+# - Run the workflow by hand (workflow_dispatch): the workflow only builds, signs and uploads the APK as an artifact.
+# No cache is used, so a release never uses files from an earlier run.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # SHA-256 of the release signing certificate. The workflow stops if the APK has a different signer.
+  # Users can compare this value with the output of "apksigner verify --print-certs".
+  EXPECTED_CERT_SHA256: 314e133e1bea685a8cb9ead20e8cb0f5673b6486d50f7ceb6d620a972ad5d78d
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write # create the draft release
+      id-token: write # build provenance attestation
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the Gradle wrapper
+        run: .github/scripts/check-gradle-wrapper.sh
+
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install Android SDK packages
+        run: .github/scripts/android-sdk.sh
+
+      - name: Read and check the version
+        id: version
+        run: |
+          version=$(sed -n 's/^val appVersion = "\([0-9]*\.[0-9]*\.[0-9]*\)"$/\1/p' app/build.gradle.kts)
+          [[ -n "$version" ]] || { echo "Cannot read appVersion from app/build.gradle.kts"; exit 1; }
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "Tag $GITHUB_REF_NAME is not v$version (appVersion). Change appVersion or the tag."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build the signed release APK
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          CLEANTUBE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          CLEANTUBE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          CLEANTUBE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          [[ -n "$RELEASE_KEYSTORE_BASE64" ]] || { echo "The signing secrets are not set"; exit 1; }
+          umask 077
+          export CLEANTUBE_KEYSTORE="$RUNNER_TEMP/release.p12"
+          trap 'rm -f "$CLEANTUBE_KEYSTORE"' EXIT
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$CLEANTUBE_KEYSTORE"
+          ./gradlew --no-daemon --no-build-cache --no-configuration-cache assembleRelease
+
+      - name: Check the signature
+        run: |
+          apk=app/build/outputs/apk/release/app-release.apk
+          apksigner="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          "$apksigner" verify --verbose "$apk"
+          actual=$("$apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          if [[ "$actual" != "$EXPECTED_CERT_SHA256" ]]; then
+            echo "Wrong signing certificate: $actual"
+            exit 1
+          fi
+
+      - name: Prepare the release files
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/CleanTubeTV-$VERSION.apk"
+          (cd dist && sha256sum ./*.apk | sed 's# \./# #' > SHA256SUMS)
+          cat dist/SHA256SUMS
+
+      - name: Attest build provenance
+        # Artifact attestations need a public repository (GitHub Free).
+        if: github.event.repository.visibility == 'public'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*.apk
+
+      - name: Upload the files
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cleantubetv-${{ steps.version.outputs.version }}
+          path: dist/
+          retention-days: 30
+
+      - name: Create the draft release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          prerelease=()
+          [[ "$VERSION" == 0.* ]] && prerelease=(--prerelease)
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --verify-tag --draft \
+            --title "CleanTube TV $VERSION" --generate-notes "${prerelease[@]}"
