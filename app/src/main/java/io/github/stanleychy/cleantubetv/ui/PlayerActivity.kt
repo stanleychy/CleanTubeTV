@@ -8,19 +8,26 @@ import android.os.Looper
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
+import android.view.Gravity
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.media3.common.C
+import androidx.media3.common.ForwardingPlayer
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.dash.manifest.DashManifestParser
 import androidx.media3.exoplayer.hls.HlsMediaSource
@@ -30,6 +37,7 @@ import androidx.media3.ui.PlayerView
 import androidx.media3.ui.TrackSelectionDialogBuilder
 import io.github.stanleychy.cleantubetv.R
 import io.github.stanleychy.cleantubetv.app
+import io.github.stanleychy.cleantubetv.settings.Settings
 import io.github.stanleychy.cleantubetv.sponsor.Segment
 import io.github.stanleychy.cleantubetv.sponsor.SponsorBlock
 import io.github.stanleychy.cleantubetv.yt.Clients
@@ -38,18 +46,21 @@ import io.github.stanleychy.cleantubetv.yt.PlayerInfo
 import io.github.stanleychy.cleantubetv.yt.PlayerParser
 import io.github.stanleychy.cleantubetv.yt.WatchReporter
 import java.io.ByteArrayInputStream
+import kotlin.math.roundToInt
 
 @OptIn(UnstableApi::class)
 class PlayerActivity : Activity() {
     private lateinit var playerView: PlayerView
     private lateinit var message: TextView
     private lateinit var qualityButton: Button
+    private lateinit var speedButton: TextView
     private var player: ExoPlayer? = null
     private var reporter: WatchReporter? = null
     private var segments: List<Segment> = emptyList()
     private val skipped = HashSet<Segment>()
     private val handler = Handler(Looper.getMainLooper())
     private var lastReportMs = 0L
+    private var speed = 1f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,16 +75,18 @@ class PlayerActivity : Activity() {
             qualityButton.visibility = v
         })
         qualityButton.setOnClickListener { showQualityDialog() }
+        speedButton = addSpeedButton()
 
         val id = intent.getStringExtra(EXTRA_ID) ?: return finish()
         showMessage(intent.getStringExtra(EXTRA_TITLE) ?: getString(R.string.loading))
+        val subtitleLanguage = app.settings.subtitleLanguage
         app.io.execute {
             val result = runCatching { PlayerParser.parse(id, app.innerTube.player(id)) }
             val segs = SponsorBlock.segments(id)
             runOnUiThread {
                 if (isFinishing) return@runOnUiThread
                 segments = segs
-                result.onSuccess { start(it) }.onFailure { e ->
+                result.onSuccess { start(it, subtitleLanguage) }.onFailure { e ->
                     Log.w(TAG, "player request failed", e)
                     showMessage(getString(R.string.play_error, e.message))
                 }
@@ -81,21 +94,35 @@ class PlayerActivity : Activity() {
         }
     }
 
-    private fun start(info: PlayerInfo) {
-        val source = buildSource(info) ?: return showMessage(getString(R.string.play_error, "no playable formats"))
+    private fun start(info: PlayerInfo, subtitleLanguage: String) {
+        val source = buildSource(info, subtitleLanguage) ?: return showMessage(getString(R.string.play_error, "no playable formats"))
+        val settings = app.settings
         val selector = DefaultTrackSelector(this).apply {
             setParameters(
                 buildUponParameters()
-                    // VP9 first: the Bravia 8 decodes it in hardware. AV1 support is not verified.
+                    // VP9 first: it has the widest HDR support on YouTube. The Bravia decodes VP9 and AV1 in hardware.
                     .setPreferredVideoMimeTypes(MimeTypes.VIDEO_VP9, MimeTypes.VIDEO_AV1, MimeTypes.VIDEO_H264)
-                    .setPreferredAudioLanguage(null)
-                    .setPreferredTextLanguage(null),
+                    // Null selects the track with the "main" role, which is the original audio.
+                    .setPreferredAudioLanguage(settings.audioLanguage.ifEmpty { null })
+                    .setPreferredTextLanguage(subtitleLanguage.ifEmpty { null })
+                    .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, subtitleLanguage.isEmpty()),
             )
         }
         val p = ExoPlayer.Builder(this).setTrackSelector(selector).build()
         player = p
-        playerView.player = p
-        reporter = WatchReporter(app.auth, info)
+        playerView.player = withoutSpeedSetting(p)
+        speed = settings.speeds.let { if (1f in it) 1f else it.first() }
+        applySpeed()
+        if (settings.historyEnabled && app.auth.isSignedIn) reporter = WatchReporter(app.innerTube, app.auth, info)
+        p.addAnalyticsListener(object : AnalyticsListener {
+            override fun onVideoInputFormatChanged(
+                eventTime: AnalyticsListener.EventTime,
+                format: Format,
+                decoderReuseEvaluation: DecoderReuseEvaluation?,
+            ) {
+                qualityButton.text = qualityLabel(format)
+            }
+        })
         p.addListener(object : Player.Listener {
             override fun onPlayerError(error: PlaybackException) {
                 Log.w(TAG, "playback error", error)
@@ -105,7 +132,9 @@ class PlayerActivity : Activity() {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 if (isPlaying) {
                     message.visibility = View.GONE
-                    app.io.execute { reporter?.onStart() }
+                    val r = reporter ?: return
+                    val pos = p.currentPosition
+                    app.io.execute { r.onStart(pos) }
                 } else {
                     report()
                 }
@@ -117,7 +146,7 @@ class PlayerActivity : Activity() {
         handler.post(tick)
     }
 
-    private fun buildSource(info: PlayerInfo): MediaSource? {
+    private fun buildSource(info: PlayerInfo, subtitleLanguage: String): MediaSource? {
         val http = DefaultHttpDataSource.Factory()
             .setUserAgent(Clients.VISIONOS.userAgent)
             .setDefaultRequestProperties(mapOf("Origin" to "https://www.youtube.com", "Referer" to "https://www.youtube.com/"))
@@ -129,7 +158,7 @@ class PlayerActivity : Activity() {
             return HlsMediaSource.Factory(http).createMediaSource(MediaItem.fromUri(hls))
         }
         if (info.formats.isEmpty()) return null
-        val mpd = DashManifest.build(info)
+        val mpd = DashManifest.build(info, subtitleLanguage)
         val uri = Uri.parse("https://www.youtube.com/watch?v=${info.videoId}")
         val manifest = DashManifestParser().parse(uri, ByteArrayInputStream(mpd.toByteArray()))
         return DashMediaSource.Factory(http).createMediaSource(manifest, MediaItem.Builder().setUri(uri).setMediaId(info.videoId).build())
@@ -158,6 +187,61 @@ class PlayerActivity : Activity() {
         lastReportMs = System.currentTimeMillis()
         val pos = p.currentPosition
         app.io.execute { r.onProgress(pos) }
+    }
+
+    /** The speed button replaces the speed row of the settings menu. It cycles through the speeds from Settings. */
+    private fun addSpeedButton(): TextView {
+        val bar = playerView.findViewById<LinearLayout>(androidx.media3.ui.R.id.exo_basic_controls)
+        val pad = (12 * resources.displayMetrics.density).toInt()
+        val button = TextView(this).apply {
+            setBackgroundResource(R.drawable.tab_bg)
+            setTextColor(getColorStateList(R.color.tab_text))
+            textSize = 16f
+            gravity = Gravity.CENTER
+            minWidth = (64 * resources.displayMetrics.density).toInt()
+            setPadding(pad, pad / 2, pad, pad / 2)
+            isFocusable = true
+            contentDescription = getString(R.string.speed)
+            setOnClickListener { nextSpeed() }
+        }
+        val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        lp.gravity = Gravity.CENTER_VERTICAL
+        lp.marginEnd = pad / 2
+        bar.addView(button, 0, lp)
+        button.text = Settings.speedLabel(speed)
+        return button
+    }
+
+    private fun nextSpeed() {
+        val list = app.settings.speeds
+        speed = list.firstOrNull { it > speed + 0.001f } ?: list.first()
+        applySpeed()
+    }
+
+    private fun applySpeed() {
+        player?.setPlaybackSpeed(speed)
+        speedButton.text = Settings.speedLabel(speed)
+    }
+
+    /** Hides the speed row in the Media3 settings menu. The player itself still accepts speed changes. */
+    private fun withoutSpeedSetting(p: Player): Player = object : ForwardingPlayer(p) {
+        override fun isCommandAvailable(command: Int) =
+            command != Player.COMMAND_SET_SPEED_AND_PITCH && super.isCommandAvailable(command)
+
+        override fun getAvailableCommands(): Player.Commands =
+            super.getAvailableCommands().buildUpon().remove(Player.COMMAND_SET_SPEED_AND_PITCH).build()
+    }
+
+    /** For example "2160p60 HDR". YouTube names a quality by the short side of the frame. */
+    private fun qualityLabel(f: Format): String {
+        val side = listOf(f.width, f.height).filter { it > 0 }.minOrNull() ?: return getString(R.string.quality)
+        val fps = if (f.frameRate > 30.5f) f.frameRate.roundToInt().toString() else ""
+        val transfer = f.colorInfo?.colorTransfer
+        val codecs = f.codecs.orEmpty()
+        // Transfer 16 is PQ and 18 is HLG in the VP9 and AV1 codec strings.
+        val hdr = transfer == C.COLOR_TRANSFER_ST2084 || transfer == C.COLOR_TRANSFER_HLG ||
+            codecs.contains(".09.16.") || codecs.contains(".09.18.")
+        return "${side}p$fps" + if (hdr) " HDR" else ""
     }
 
     private fun showQualityDialog() {

@@ -7,7 +7,8 @@ package io.github.stanleychy.cleantubetv.yt
  * can only switch quality inside one codec.
  */
 object DashManifest {
-    fun build(info: PlayerInfo): String {
+    /** [subtitleLanguage] adds a YouTube auto-translated track when the video has no track in that language. */
+    fun build(info: PlayerInfo, subtitleLanguage: String = ""): String {
         val sb = StringBuilder()
         sb.append("""<?xml version="1.0" encoding="UTF-8"?>""")
         sb.append("""<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="static" minBufferTime="PT1.5S" """)
@@ -41,10 +42,11 @@ object DashManifest {
             sb.append("</AdaptationSet>")
         }
 
-        for (c in info.captions) {
+        for (c in captionTracks(info, subtitleLanguage)) {
             sb.append("""<AdaptationSet id="${setId++}" mimeType="text/vtt" lang="${esc(c.lang)}">""")
-            val label = if (c.isAuto) "${c.label} (auto)" else c.label
-            sb.append("<Label>${esc(label)}</Label>")
+            sb.append("<Label>${esc(c.label)}</Label>")
+            // "main" sets the default flag. It makes a manual track win over an auto track in the same language.
+            if (!c.isAuto) sb.append("""<Role schemeIdUri="urn:mpeg:dash:role:2011" value="main"/>""")
             sb.append("""<Representation id="cc${setId}" bandwidth="0">""")
             sb.append("<BaseURL>${esc(withParam(c.url, "fmt", "vtt"))}</BaseURL>")
             sb.append("</Representation></AdaptationSet>")
@@ -53,6 +55,18 @@ object DashManifest {
         sb.append("</Period></MPD>")
         return sb.toString()
     }
+
+    private fun captionTracks(info: PlayerInfo, lang: String): List<CaptionTrack> {
+        val tracks = info.captions.sortedBy { it.isAuto }.map { if (it.isAuto) it.copy(label = "${it.label} (auto)") else it }
+        if (lang.isEmpty() || tracks.isEmpty() || tracks.any { sameLanguage(it.lang, lang) }) return tracks
+        val source = tracks.first()
+        val name = java.util.Locale.forLanguageTag(lang).getDisplayName(java.util.Locale.getDefault())
+        val translated = CaptionTrack(withParam(source.url, "tlang", lang), lang, "$name (auto-translated)", isAuto = true)
+        return tracks + translated
+    }
+
+    private fun sameLanguage(a: String, b: String) =
+        a.equals(b, ignoreCase = true) || a.substringBefore('-').equals(b.substringBefore('-'), ignoreCase = true)
 
     private fun durationSec(info: PlayerInfo): String =
         if (info.lengthSec > 0) info.lengthSec.toString() else "0"
