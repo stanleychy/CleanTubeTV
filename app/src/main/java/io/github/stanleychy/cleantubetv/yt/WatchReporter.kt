@@ -12,7 +12,7 @@ import java.util.Locale
  * The stream comes from a signed-out VISIONOS request, and its playbackTracking URLs
  * are not linked to the account. So, the same as SmartTube, this class makes one extra
  * player request as the signed-in TV client and uses the tracking URLs from it.
- * Call all methods off the main thread.
+ * Call all methods off the main thread, from one thread only, so that the pings stay in order.
  */
 class WatchReporter(private val innerTube: InnerTube, private val auth: Auth, private val info: PlayerInfo) {
     private val cpn = randomCpn()
@@ -44,6 +44,17 @@ class WatchReporter(private val innerTube: InnerTube, private val auth: Auth, pr
             "$base&ver=2&cpn=$cpn&cmt=${fmt(pos)}&st=${fmt(lastPosSec)}&et=${fmt(pos)}${lenParam(base)}&state=playing$final",
         )
         lastPosSec = pos
+    }
+
+    /**
+     * Ends the watched segment at the seek start, and starts the next segment at the seek target.
+     * Without this, one ping would report the skipped part (for example a SponsorBlock segment) as watched.
+     */
+    @Synchronized
+    fun onSeek(fromMs: Long, toMs: Long) {
+        if (!started) return
+        onProgress(fromMs)
+        lastPosSec = toMs / 1000.0
     }
 
     private fun resolve(): Boolean {

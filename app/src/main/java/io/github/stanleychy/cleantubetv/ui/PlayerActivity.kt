@@ -46,6 +46,7 @@ import io.github.stanleychy.cleantubetv.yt.PlayerInfo
 import io.github.stanleychy.cleantubetv.yt.PlayerParser
 import io.github.stanleychy.cleantubetv.yt.WatchReporter
 import java.io.ByteArrayInputStream
+import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 @OptIn(UnstableApi::class)
@@ -60,6 +61,8 @@ class PlayerActivity : Activity() {
     private val skipped = HashSet<Segment>()
     private val handler = Handler(Looper.getMainLooper())
     private var lastReportMs = 0L
+    /** One thread for watch reports, so that YouTube gets the pings in order. */
+    private val reportQueue = Executors.newSingleThreadExecutor()
     private var speed = 1f
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -124,6 +127,18 @@ class PlayerActivity : Activity() {
             }
         })
         p.addListener(object : Player.Listener {
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int,
+            ) {
+                if (reason != Player.DISCONTINUITY_REASON_SEEK) return
+                val r = reporter ?: return
+                val from = oldPosition.positionMs
+                val to = newPosition.positionMs
+                reportQueue.execute { r.onSeek(from, to) }
+            }
+
             override fun onPlayerError(error: PlaybackException) {
                 Log.w(TAG, "playback error", error)
                 showMessage(getString(R.string.play_error, error.errorCodeName))
@@ -134,7 +149,7 @@ class PlayerActivity : Activity() {
                     message.visibility = View.GONE
                     val r = reporter ?: return
                     val pos = p.currentPosition
-                    app.io.execute { r.onStart(pos) }
+                    reportQueue.execute { r.onStart(pos) }
                 } else {
                     report()
                 }
@@ -186,7 +201,7 @@ class PlayerActivity : Activity() {
         val r = reporter ?: return
         lastReportMs = System.currentTimeMillis()
         val pos = p.currentPosition
-        app.io.execute { r.onProgress(pos) }
+        reportQueue.execute { r.onProgress(pos) }
     }
 
     /** The speed button replaces the speed row of the settings menu. It cycles through the speeds from Settings. */
@@ -272,6 +287,8 @@ class PlayerActivity : Activity() {
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
         report()
+        // The queued pings still go out. The queue then stops.
+        reportQueue.shutdown()
         player?.release()
         player = null
         super.onDestroy()
