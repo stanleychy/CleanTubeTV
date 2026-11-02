@@ -44,19 +44,24 @@ The design is based on a review of SmartTube. Refer to `docs/research/smarttube-
 1. On the TV, go to **Settings > System > About**.
 2. Select **Android TV OS build** 7 times. The TV shows "You are now a developer".
 3. Go to **Settings > System > Developer options**.
-4. Set **USB debugging** to on.
-5. If the TV has a **Network debugging** or **Wireless debugging** option, set it to on.
-6. Go to **Settings > Network & Internet**. Write down the IP address of the TV.
+4. Set **Wireless debugging** to on.
+5. Open **Wireless debugging**. Write down the **IP address & Port**. This is the connect address.
+6. Select **Pair device with pairing code**. Keep this screen open. It shows a 6-digit code and a pairing address. The pairing port is different from the connect port.
 
 ## Install the app on the TV
 
-1. Connect to the TV. Replace `TV_IP` with the IP address of the TV:
+1. Pair your computer with the TV. Use the pairing address and the code from the TV screen. Do this step one time only:
 
    ```
-   adb connect TV_IP:5555
+   adb pair TV_IP:PAIRING_PORT CODE
    ```
 
-2. On the TV, the "Allow USB debugging?" dialog shows. Select **Always allow from this computer**, then select **OK**.
+2. Connect to the TV. Use the connect address:
+
+   ```
+   adb connect TV_IP:CONNECT_PORT
+   ```
+
 3. Install the APK:
 
    ```

@@ -61,10 +61,11 @@ SmartTube has no ad-filter code. Ads do not show because the app reads only `str
 
 ## 7. Platform facts for Sony Bravia 8 (XR80)
 
-- SoC: MediaTek Pentonic 1000. 6 GB RAM. Google TV on Android TV 12 (API 31), as far as we know.
-- CPU ABI of the userland: not verified. Do this check: `adb shell getprop ro.product.cpu.abilist`.
-- AV1 and VP9 hardware decode: not verified. The app must query `MediaCodecList` at run time.
-- Sideload: Developer options, then network debugging, then `adb connect <ip>:5555`, then `adb install`.
+- SoC: MediaTek Pentonic 1000. 6 GB RAM.
+- Verified on the test TV (2026-11-01): `ro.product.model` is `BRAVIA 4K AE2`, Android 14 (API 34).
+- CPU ABI of the userland: `armeabi-v7a,armeabi` (32-bit only). The app has no native libraries, so this has no effect.
+- Hardware video decoders: `c2.mtk.vp9.decoder`, `c2.mtk.av1.decoder`, `c2.mtk.hevc.decoder`, `c2.mtk.avc.decoder`, and Dolby Vision AV1 (`c2.mtk.dvav1.10.decoder`).
+- Sideload: Developer options, then Wireless debugging. Pair with `adb pair <ip>:<pairing port> <code>`, then `adb connect <ip>:<connect port>`, then `adb install`. Port 5555 is closed.
 
 ## 8. YouTube restrictions (late 2026)
 
