@@ -72,6 +72,8 @@ SmartTube has no ad-filter code. Ads do not show because the app reads only `str
 - `tv` (TVHTML5) and `android_vr` do not need a PoToken. Logged-in TV playback is not DRM-protected.
 - YouTube forces SABR streaming more often. SmartTube issue #6293 (October 2026) shows a SABR reload loop.
 - The signature and `n` challenges still need a JavaScript engine. If you do not solve `n`, YouTube throttles the stream.
+- The TVHTML5 player request needs `playbackContext.contentPlaybackContext.signatureTimestamp`. Use the 8-digit value from `tv-player-ias-tcl.js` (for example `20753001`). The player URL is in `"player_url"` on `https://www.youtube.com/tv`. With no value, or with the 5-digit value, YouTube replies "UNPLAYABLE: The page needs to be reloaded" (verified 2026-11-01).
+- Watch history needs the playbackTracking URLs from a signed-in TVHTML5 player response. The URLs from a signed-out VISIONOS response do not record the watch in the account.
 - Expect breakage every few weeks. This is the main maintenance cost.
 
 ## 9. Design decisions for CleanTubeTV
