@@ -10,6 +10,7 @@ Usage:
 --no-authors  Do not ask GitHub for the authors (for example, with no network).
 
 With --repo, each line names its author with an @mention, so that GitHub notifies the contributor.
+The maintainers (the users in .github/CODEOWNERS) are not named: they make most of the changes.
 The author of a pull request comes from the pull request. The author of a commit with no pull request
 comes from the commit. The script uses the GitHub CLI (gh) for this. In GitHub Actions, set GH_TOKEN.
 If gh cannot get an author, the line has no author.
@@ -55,6 +56,20 @@ def previous_tag(ref: str):
         return None  # No earlier tag, or ref is the first commit.
 
 
+def maintainers(path: str = ".github/CODEOWNERS") -> set:
+    """The users in CODEOWNERS, in lower case. Teams ("@org/team") are not included."""
+    try:
+        text = open(path, encoding="utf-8").read()
+    except OSError:
+        return set()
+    users = set()
+    for line in text.splitlines():
+        for word in line.split("#", 1)[0].split()[1:]:
+            if word.startswith("@") and "/" not in word:
+                users.add(word[1:].lower())
+    return users
+
+
 def gh_login(path: str, field: str):
     """The login in field (for example ".user.login") of the GitHub API response, or None."""
     try:
@@ -93,6 +108,7 @@ def main() -> int:
     a = ap.parse_args()
     cache: dict = {}
     contributors: list[str] = []
+    skip = maintainers()
 
     since = a.since or previous_tag(a.to)
     rev = f"{since}..{a.to}" if since else a.to
@@ -109,7 +125,7 @@ def main() -> int:
             if a.repo:
                 link += f" ([#{pr.group(1)}](https://github.com/{a.repo}/pull/{pr.group(1)}))"
         login = author(a.repo, sha, pr.group(1) if pr else None, cache) if a.repo and not a.no_authors else None
-        if login:
+        if login and login.lower() not in skip:
             link += f" by @{login}"
             if login not in contributors:
                 contributors.append(login)

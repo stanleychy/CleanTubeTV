@@ -36,7 +36,7 @@ Allowed types: `feat`, `fix`, `perf`, `docs`, `build`, `ci`, `refactor`, `style`
 
 For a change that is not compatible with earlier versions, add `!` after the type or the scope in the title (`feat(player)!: remove the old quality menu`). The squash commit has no body, so a `BREAKING CHANGE:` line in a branch commit is not kept.
 
-The Release workflow makes the release notes from these subjects. Each line names the author of the pull request with an @mention, and the notes have a list of all contributors. Write the description for users: tell what changed, not how. To see the notes for the next release, run this command:
+The Release workflow makes the release notes from these subjects. Each line names the author of the pull request with an @mention, and the notes have a list of all contributors. The maintainers (the users in `.github/CODEOWNERS`) are not named. Write the description for users: tell what changed, not how. To see the notes for the next release, run this command:
 
 ```
 .github/scripts/changelog.py
