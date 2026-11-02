@@ -40,7 +40,17 @@ class InnerTube(private val context: Context, private val auth: Auth) {
                 )
             }
         }
-        return call("player", client, body, withAuth = withAuth)
+        val hadVisitor = visitorFor(client) != null
+        val r = call("player", client, body, withAuth = withAuth)
+        // With no visitor ID, YouTube replies LOGIN_REQUIRED but gives a new visitor ID.
+        // The second request with that ID works (verified 2026-11-01). The call above kept it.
+        val status = r.optJSONObject("playabilityStatus")?.optString("status")
+        if (client != Clients.TV && !hadVisitor && status == "LOGIN_REQUIRED" && visitorFor(client) != null) {
+            Log.i(TAG, "player: retry with the new signed-out visitor ID")
+            body.getJSONObject("context").getJSONObject("client").put("visitorData", visitorFor(client))
+            return call("player", client, body, withAuth = withAuth)
+        }
+        return r
     }
 
     /** The signed-in account (name, email or handle, photo). Returns null when no account item is found. */
@@ -54,16 +64,36 @@ class InnerTube(private val context: Context, private val auth: Auth) {
         return AccountInfo.parse(call("account/accounts_list", Clients.TV, body, withAuth = true))
     }
 
+    /**
+     * The visitor ID for a client. The TV client uses the visitor ID of the signed-in TV session.
+     * Other clients are signed out and use a separate visitor ID, so that YouTube cannot link
+     * their requests to the account. Null means "no visitor ID yet": YouTube gives one in the reply.
+     */
+    private fun visitorFor(c: Client): String? =
+        if (c == Clients.TV) TvAppInfoProvider.get(context).visitorData else Scraped.visitor(prefs.getString(KEY_ANON_VISITOR, null))
+
+    /** Keeps the visitor ID that YouTube gives to a signed-out client. */
+    private fun keepAnonVisitor(c: Client, reply: JSONObject) {
+        if (c == Clients.TV) return
+        val v = Scraped.visitor(reply.optJSONObject("responseContext")?.optString("visitorData")) ?: return
+        if (v != prefs.getString(KEY_ANON_VISITOR, null)) prefs.edit().putString(KEY_ANON_VISITOR, v).apply()
+    }
+
+    /** The TV client version comes from the YouTube TV web app. The value in [Clients] is the fallback. */
+    private fun versionFor(c: Client): String =
+        if (c == Clients.TV) TvAppInfoProvider.get(context).clientVersion ?: c.version else c.version
+
+    private val prefs = context.getSharedPreferences("innertube", Context.MODE_PRIVATE)
+
     private fun context(c: Client, forBrowse: Boolean): JSONObject {
-        val app = TvAppInfoProvider.get(context)
         val locale = Locale.getDefault()
         val client = JSONObject()
             .put("clientName", c.name)
-            .put("clientVersion", c.version)
+            .put("clientVersion", versionFor(c))
             .put("hl", locale.language.ifEmpty { "en" })
             .put("gl", locale.country.ifEmpty { "US" })
             .put("utcOffsetMinutes", TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 60_000)
-            .put("visitorData", app.visitorData)
+        visitorFor(c)?.let { client.put("visitorData", it) }
         c.extra.forEach { (k, v) -> client.put(k, v) }
         if (forBrowse && c == Clients.TV) {
             client.put("tvAppInfo", JSONObject().put("appQuality", "TV_APP_QUALITY_FULL_ANIMATION").put("zylonLeftNav", true))
@@ -75,17 +105,17 @@ class InnerTube(private val context: Context, private val auth: Auth) {
     }
 
     private fun call(endpoint: String, c: Client, body: JSONObject, withAuth: Boolean): JSONObject {
-        val app = TvAppInfoProvider.get(context)
         val headers = mutableMapOf(
             "Content-Type" to "application/json",
             "User-Agent" to c.userAgent,
             "X-YouTube-Client-Name" to c.nameId,
-            "X-YouTube-Client-Version" to c.version,
-            "X-Goog-Visitor-Id" to app.visitorData,
+            "X-YouTube-Client-Version" to versionFor(c),
             "Origin" to "https://www.youtube.com",
         )
+        visitorFor(c)?.let { headers["X-Goog-Visitor-Id"] = it }
         if (c == Clients.TV) headers["Referer"] = "https://www.youtube.com/tv"
-        if (withAuth) auth.accessToken()?.let { headers["Authorization"] = "Bearer $it" }
+        // Never send the account token as a signed-out client.
+        if (withAuth && c == Clients.TV) auth.accessToken()?.let { headers["Authorization"] = "Bearer $it" }
         val r = Http.request(
             "https://www.youtube.com/youtubei/v1/$endpoint?prettyPrint=false",
             method = "POST",
@@ -96,8 +126,11 @@ class InnerTube(private val context: Context, private val auth: Auth) {
             Log.w(TAG, "$endpoint HTTP ${r.code}: ${r.body.take(300)}")
             throw IOException("YouTube $endpoint request failed (HTTP ${r.code})")
         }
-        return JSONObject(r.body)
+        return JSONObject(r.body).also { keepAnonVisitor(c, it) }
     }
 
-    private companion object { const val TAG = "InnerTube" }
+    private companion object {
+        const val TAG = "InnerTube"
+        const val KEY_ANON_VISITOR = "anon_visitor"
+    }
 }

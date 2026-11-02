@@ -86,7 +86,7 @@ SmartTube has no ad-filter code. Ads do not show because the app reads only `str
 6. Encrypt the refresh token with an Android Keystore key.
 7. Use the SponsorBlock hash-prefix endpoint.
 8. No updater, no analytics, no crash reporting, no remote configuration.
-9. Primary client: TVHTML5 with OAuth. Fallback: ANDROID_VR.
+9. Account requests (browse, account, watch tracking) use TVHTML5 with OAuth. Playback uses a signed-out VISIONOS player request: it gives direct stream URLs up to 4K HDR with no signature or `n` challenge and no PoToken, so the app does not run YouTube player code. VISIONOS uses its own visitor ID and never gets the OAuth token, so YouTube cannot link it to the account. Fallback if VISIONOS stops: ANDROID_VR.
 
 ## Sources
 
