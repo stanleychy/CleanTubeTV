@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ring with a rounded play triangle. The triangle centroid is at the center (54,54). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path
+        android:pathData="M54,26a28,28 0 1 1 0,56a28,28 0 1 1 0,-56z"
+        android:strokeColor="@color/icon_ring"
+        android:strokeWidth="4" />
+    <path
+        android:fillColor="@color/icon_play"
+        android:pathData="M46,40L46,68L70,54Z"
+        android:strokeColor="@color/icon_play"
+        android:strokeLineJoin="round"
+        android:strokeWidth="5" />
+</vector>

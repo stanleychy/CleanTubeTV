@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App icon and banner colors. A generic play mark: no YouTube colors or shapes. -->
+<resources>
+    <color name="icon_background">#0E1116</color>
+    <color name="icon_ring">#1F6F68</color>
+    <color name="icon_play">#5EEAD4</color>
+</resources>

@@ -1,0 +1,60 @@
+# Builds and checks every pull request and every push to main.
+# Supply chain: each action is pinned to a full commit SHA. Dependabot updates the pins.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Branch protection requires this check name. Do not change it without updating scripts/protect-main.sh.
+    name: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the Gradle wrapper
+        run: .github/scripts/check-gradle-wrapper.sh
+
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          # Gradle checks every artifact against gradle/verification-metadata.xml, so a bad cache entry fails the build.
+          cache: gradle
+
+      - name: Install Android SDK packages
+        run: .github/scripts/android-sdk.sh
+
+      - name: Build and lint
+        # The release APK in CI is not signed. Only the Release workflow signs.
+        run: ./gradlew --no-daemon assembleDebug assembleRelease lintDebug
+
+      - name: Upload the debug APK
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cleantubetv-debug-${{ github.sha }}
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+      - name: Upload the lint report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lint-report-${{ github.sha }}
+          path: app/build/reports/lint-results-debug.html
+          retention-days: 7
+          if-no-files-found: ignore

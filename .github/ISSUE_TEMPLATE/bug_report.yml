@@ -1,0 +1,79 @@
+name: Bug report
+description: Something does not work as expected.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include your e-mail address, tokens, cookies or account names in this report.
+        Remove them from logs before you paste the logs.
+  - type: textarea
+    id: what
+    attributes:
+      label: What occurs
+      description: Describe the problem. Include the error text that the app shows.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expect
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to cause the problem
+      placeholder: |
+        1. Go to the Home tab.
+        2. Select a video.
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Settings > Apps > CleanTube TV, or the release name.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Where did you get the APK?
+      options:
+        - GitHub release
+        - I built it from source
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: TV model and Android version
+      placeholder: "Sony Bravia 8, Android 14"
+    validations:
+      required: true
+  - type: dropdown
+    id: signed-in
+    attributes:
+      label: Are you signed in?
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+  - type: input
+    id: video
+    attributes:
+      label: Video ID or link (if the problem is with one video)
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: |
+        Optional. Run this command while the problem occurs:
+        adb logcat -s Auth InnerTube PlayerActivity MainActivity SponsorBlock WatchReporter ExoPlayerImpl
+      render: text

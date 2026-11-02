@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 320x180 dp TV launcher banner: dark field with a play triangle. -->
+<!-- 320x180 dp TV launcher banner: dark field with the app play mark. No YouTube colors or shapes. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="320dp" android:height="180dp"
     android:viewportWidth="320" android:viewportHeight="180">
-    <path android:fillColor="#0F0F0F" android:pathData="M0,0h320v180h-320z" />
-    <path android:fillColor="#E53935" android:pathData="M110,50h100a20,20 0 0 1 20,20v40a20,20 0 0 1 -20,20h-100a20,20 0 0 1 -20,-20v-40a20,20 0 0 1 20,-20z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M148,70l32,20l-32,20z" />
+    <path android:fillColor="@color/icon_background" android:pathData="M0,0h320v180h-320z" />
+    <path
+        android:pathData="M160,40a50,50 0 1 1 0,100a50,50 0 1 1 0,-100z"
+        android:strokeColor="@color/icon_ring"
+        android:strokeWidth="7" />
+    <path
+        android:fillColor="@color/icon_play"
+        android:pathData="M146,65L146,115L189,90Z"
+        android:strokeColor="@color/icon_play"
+        android:strokeLineJoin="round"
+        android:strokeWidth="9" />
 </vector>
