@@ -155,7 +155,8 @@ class PlayerActivity : Activity() {
                 }
             }
         })
-        p.setMediaSource(source)
+        // A start time from a link (for example youtu.be/ID?t=90). 0 starts at the beginning.
+        p.setMediaSource(source, intent.getLongExtra(EXTRA_START_MS, 0).coerceAtLeast(0))
         p.prepare()
         p.playWhenReady = true
         handler.post(tick)
@@ -297,6 +298,7 @@ class PlayerActivity : Activity() {
     companion object {
         const val EXTRA_ID = "video_id"
         const val EXTRA_TITLE = "title"
+        const val EXTRA_START_MS = "start_ms"
         private const val TAG = "PlayerActivity"
         private const val REPORT_INTERVAL_MS = 30_000L
     }
