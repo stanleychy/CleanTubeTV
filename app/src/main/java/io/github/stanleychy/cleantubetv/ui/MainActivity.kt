@@ -151,8 +151,6 @@ class MainActivity : Activity() {
                 } else {
                     account = info
                     if (current == Tab.ACCOUNT) showAccount()
-        // The user can turn the service on or off in the system settings.
-        refreshRemoteRow()
                 }
             }
         }

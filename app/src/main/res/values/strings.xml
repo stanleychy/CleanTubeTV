@@ -38,7 +38,7 @@
     <string name="remote_not_set">Not set</string>
     <string name="remote_key">Key %1$s</string>
     <string name="remote_off_title">Turn on the remote button service</string>
-    <string name="remote_off_message">Go to Settings &gt; System &gt; Accessibility and turn on \"CleanTube remote button\". If it is not in the list, use this command on your computer:\n\nadb shell settings put secure enabled_accessibility_services %1$s</string>
+    <string name="remote_off_message">Go to Settings &gt; System &gt; Accessibility and turn on \"CleanTube remote button\". If it is not in the list, use these commands on your computer:\n\nadb shell settings put secure enabled_accessibility_services %1$s\nadb shell settings put secure accessibility_enabled 1\n\nCAUTION: The first command replaces the list of accessibility services. If you use other services, add them to the list. Separate the items with a colon (:).</string>
     <string name="remote_learn_title">Push the YouTube button</string>
     <string name="remote_learn_message">Push the YouTube button on the remote now. If the YouTube app opens, the TV does not let apps change this button.</string>
     <string name="remote_clear">Clear</string>
