@@ -202,7 +202,7 @@ YouTube changes its API frequently. Playback can stop without warning. When this
    git push origin v0.2.0
    ```
 
-4. The Release workflow builds, signs and checks the APK. It makes a draft release with the APK, `SHA256SUMS` and release notes. The notes come from the Conventional Commits since the last tag. Each line names the contributor. To see them before you push the tag, run `.github/scripts/changelog.py`.
+4. The Release workflow builds, signs and checks the APK. It makes a draft release with the APK, `SHA256SUMS` and release notes. The notes come from the Conventional Commits since the last tag. Each line names the contributor. Changes by the maintainers are not named. To see them before you push the tag, run `.github/scripts/changelog.py`.
 5. Examine the draft release on GitHub. Then publish it.
 
 To build and sign without a release, run the Release workflow by hand (**Actions > Release > Run workflow**). The APK is in the workflow artifacts.
