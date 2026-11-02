@@ -44,6 +44,7 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 - Write commit messages with Conventional Commits.
 - Write instructions in ASD-STE100 Simplified Technical English (short sentences, active voice, one instruction in each sentence).
 - `main` is protected. Make a branch and open a pull request. Do not push to `main`.
+- The pull request title becomes the commit on `main` (squash merge only). Write it as a Conventional Commit for users, because it goes in the release notes.
 
 ## Repository map
 
@@ -71,8 +72,9 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 | `app/src/main/assets/ejs/` | Vendored yt-dlp EJS solver. Not used now. Kept for a future fallback. |
 | `docs/research/smarttube-architecture.md` | Research notes: SmartTube design, YouTube restrictions, design decisions. Read section 8 and 9 first. |
 | `gradle/verification-metadata.xml`, `*.lockfile` | SHA-256 of each artifact and the locked versions. |
-| `.github/workflows/` | `ci.yml` (build and lint) and `release.yml` (signed release APK). |
-| `scripts/protect-main.sh` | Turns on branch and tag protection. |
+| `.github/workflows/` | `ci.yml` (build and lint), `conventional-commits.yml` (title and commit check) and `release.yml` (signed release APK with release notes). |
+| `.github/scripts/changelog.py` | Makes the release notes from the Conventional Commits since the last `v*` tag. |
+| `.github/rulesets/`, `docs/repository-security.md` | Branch and tag rulesets, and a record of all repository settings. |
 
 All `.kt` paths in the table, except `App.kt`, are under `app/src/main/java/io/github/stanleychy/cleantubetv/`.
 
@@ -142,4 +144,4 @@ There are no unit tests now. Test each change on an Android TV device or emulato
 | Videos do not show in Watch History | `yt/WatchReporter.kt`. Look for `TV tracking: status=` and `ping OK` in the log. |
 | A scraped value is rejected | The exception text names the value. Compare the live value with the pattern in `yt/Scraped.kt`. |
 | Add a setting | `settings/Settings.kt`, the Settings tab in `ui/MainActivity.kt`, `res/layout/activity_main.xml`, `res/values/strings.xml`. |
-| Make a release | Change `appVersion` in `app/build.gradle.kts`, merge, then push the tag `vX.Y.Z`. The Release workflow makes a draft release. |
+| Make a release | Change `appVersion` in `app/build.gradle.kts`, merge, then push the tag `vX.Y.Z`. The Release workflow makes a draft release with notes from the commits. |

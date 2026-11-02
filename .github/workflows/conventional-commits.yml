@@ -1,0 +1,32 @@
+# Checks that the pull request title uses Conventional Commits.
+# The repository allows only squash merges, so the title becomes the commit subject on main.
+# The Release workflow makes the release notes from these subjects (.github/scripts/changelog.py).
+name: Conventional Commits
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conventional-commits-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # The "Protect main" ruleset requires this check name.
+    name: conventional-commits
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the title
+        env:
+          # The title goes in an environment variable, never directly in the script (script injection).
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: python3 -I .github/scripts/check-commits.py

@@ -202,12 +202,12 @@ YouTube changes its API frequently. Playback can stop without warning. When this
    git push origin v0.2.0
    ```
 
-4. The Release workflow builds, signs and checks the APK. It makes a draft release with the APK, `SHA256SUMS` and generated release notes.
+4. The Release workflow builds, signs and checks the APK. It makes a draft release with the APK, `SHA256SUMS` and release notes. The notes come from the Conventional Commits since the last tag. Each line names the contributor. To see them before you push the tag, run `.github/scripts/changelog.py`.
 5. Examine the draft release on GitHub. Then publish it.
 
 To build and sign without a release, run the Release workflow by hand (**Actions > Release > Run workflow**). The APK is in the workflow artifacts.
 
-The signing key is in the repository secrets `RELEASE_KEYSTORE_BASE64`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD`. Keep an offline backup of the keystore and the password. If you lose them, users must uninstall the app to install a new release.
+The signing key is in the secrets `RELEASE_KEYSTORE_BASE64`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD` of the `release` environment. Only `v*` tags and `main` can use this environment. Refer to [docs/repository-security.md](docs/repository-security.md). Keep an offline backup of the keystore and the password. If you lose them, users must uninstall the app to install a new release.
 
 ## Contribute
 

@@ -1,2 +1,2 @@
-# The maintainer must approve each change to main (see scripts/protect-main.sh).
+# The maintainer must approve each change to main (see .github/rulesets/protect-main.json).
 * @stanleychy

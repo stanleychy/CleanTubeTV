@@ -30,7 +30,17 @@ Use [Conventional Commits](https://www.conventionalcommits.org/). Examples:
 - `fix(history): end watch segments at seeks`
 - `docs: describe the Settings tab`
 
-The pull request title must also use this format, because the maintainer can squash the commits.
+The repository allows only squash merges. The pull request title becomes the one commit on `main`, so the title must use this format. The `conventional-commits` check examines the title. The commits in your branch can use any format, but Conventional Commits are recommended.
+
+Allowed types: `feat`, `fix`, `perf`, `docs`, `build`, `ci`, `refactor`, `style`, `test`, `chore`, `revert`.
+
+For a change that is not compatible with earlier versions, add `!` after the type or the scope in the title (`feat(player)!: remove the old quality menu`). The squash commit has no body, so a `BREAKING CHANGE:` line in a branch commit is not kept.
+
+The Release workflow makes the release notes from these subjects. Each line names the author of the pull request with an @mention, and the notes have a list of all contributors. Write the description for users: tell what changed, not how. To see the notes for the next release, run this command:
+
+```
+.github/scripts/changelog.py
+```
 
 ## Documentation
 
@@ -58,5 +68,5 @@ When a dependency change is approved:
 
 ## Review and merge
 
-- Only the maintainer can merge to `main`. Each pull request needs the approval of the code owner and a passed `build` check.
+- Only the maintainer can merge to `main`. Each pull request needs the approval of the code owner and passed `build` and `conventional-commits` checks.
 - GitHub Actions runs a workflow from a first-time contributor only after the maintainer approves it.
