@@ -114,21 +114,23 @@ To stop the function, select the row again and select **Clear**. You can also tu
 
 ## Open YouTube links
 
-The app accepts `youtube.com`, `youtu.be` and `vnd.youtube:` links. A video link starts the player. Other links open the main screen.
+The app accepts `youtube.com`, `youtu.be` and `vnd.youtube:` links. A video link starts the player. If the link has a start time (`t=90`, `t=1m30s` or `start=90`), playback starts at that time. Other links open the main screen.
 
 Android opens `https` links in the official YouTube app first, because that app is verified for these domains. To use CleanTube TV for these links, do one of these steps:
 
-- Disable the official YouTube app:
+- Approve the domains for CleanTube TV (recommended):
+
+  ```
+  adb shell pm set-app-links-user-selection --user 0 --package io.github.stanleychy.cleantubetv true youtube.com www.youtube.com m.youtube.com youtu.be
+  ```
+
+- Or disable the official YouTube app:
 
   ```
   adb shell pm disable-user --user 0 com.google.android.youtube.tv
   ```
 
-- Or approve the domains for CleanTube TV:
-
-  ```
-  adb shell pm set-app-links-user-selection --user 0 --package io.github.stanleychy.cleantubetv true youtube.com www.youtube.com m.youtube.com youtu.be
-  ```
+  CAUTION: When the official YouTube app is disabled, you cannot cast from your phone to the TV. To enable the app again, use `adb shell pm enable com.google.android.youtube.tv`.
 
 To test a link, use this command:
 
