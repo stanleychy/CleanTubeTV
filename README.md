@@ -6,12 +6,13 @@ The design is based on a review of SmartTube. Refer to `docs/research/smarttube-
 
 ## Features
 
-- Sign in with your Google account (YouTube TV code at `youtube.com/activate`).
+- Sign in with your Google account (YouTube TV code at `youtube.com/activate`). The Account tab shows the name and e-mail address of the account.
 - Home feed and Subscriptions feed.
-- Playback with no ads, up to 4K HDR.
+- Playback with no ads, up to 4K HDR. The quality button shows the current quality, for example `2160p60 HDR`.
 - Automatic skip of sponsor, self-promotion and interaction segments (SponsorBlock).
-- Quality menu, playback speed, subtitles and live streams.
-- Watch history is sent to your YouTube account.
+- A speed button on the player control bar. Each push selects the next speed in your list.
+- Subtitles, audio tracks and live streams.
+- Watch history and resume points in your YouTube account. You can set this to off.
 
 ## Supply-chain rules
 
@@ -76,6 +77,17 @@ The design is based on a review of SmartTube. Refer to `docs/research/smarttube-
 2. On your phone or computer, go to the URL that the TV shows.
 3. Enter the code that the TV shows.
 4. Approve the access. The TV goes back to the main screen.
+
+## Settings
+
+Go to the **Settings** tab. Select a row and push **OK** to change it.
+
+| Setting | Function | Default |
+|---|---|---|
+| Watch history | When on, the app sends watch reports to YouTube. The video then shows in your Watch History. | On |
+| Speed button | The speeds for the speed button on the player. Select one or more. | 1x, 1.5x, 2x |
+| Audio language | The audio track to use when a video has more than one. "Original" selects the original audio of the video. | Original |
+| Subtitles | The subtitle language. If the video has no subtitles in this language, the app uses YouTube auto-translation. "Off" shows no subtitles. You can always use the CC button on the player. | Off |
 
 ## Find problems
 
