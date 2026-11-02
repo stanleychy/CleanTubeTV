@@ -30,7 +30,13 @@ class Settings(context: Context) {
         get() = prefs.getString(KEY_SUBS, "").orEmpty()
         set(v) = prefs.edit().putString(KEY_SUBS, v).apply()
 
+    /** Remote key code that opens CleanTube (see RemoteKeyService). 0 (KEYCODE_UNKNOWN) means none. */
+    var remoteKeyCode: Int
+        get() = prefs.getInt(KEY_REMOTE, 0)
+        set(v) = prefs.edit().putInt(KEY_REMOTE, v).apply()
+
     companion object {
+        private const val KEY_REMOTE = "remote_key_code"
         private const val KEY_HISTORY = "history_enabled"
         private const val KEY_SPEEDS = "speeds"
         private const val KEY_AUDIO = "audio_language"

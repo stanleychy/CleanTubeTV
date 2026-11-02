@@ -2,9 +2,11 @@ package io.github.stanleychy.cleantubetv.ui
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -12,6 +14,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.github.stanleychy.cleantubetv.R
 import io.github.stanleychy.cleantubetv.app
+import io.github.stanleychy.cleantubetv.remote.RemoteKeyService
 import io.github.stanleychy.cleantubetv.settings.Settings
 import io.github.stanleychy.cleantubetv.yt.AccountInfo
 import io.github.stanleychy.cleantubetv.yt.FeedItemsMapper
@@ -36,6 +39,7 @@ class MainActivity : Activity() {
     private var loading = false
     private var generation = 0
     private var account: AccountInfo? = null
+    private lateinit var remoteRow: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,6 +78,8 @@ class MainActivity : Activity() {
         super.onResume()
         // Refresh after sign-in.
         if (current == Tab.ACCOUNT) showAccount()
+        // The user can turn the service on or off in the system settings.
+        refreshRemoteRow()
         if ((current == Tab.HOME || current == Tab.SUBSCRIPTIONS) && app.auth.isSignedIn && adapter.itemCount == 0 && !loading) {
             load(current, null)
         }
@@ -145,6 +151,8 @@ class MainActivity : Activity() {
                 } else {
                     account = info
                     if (current == Tab.ACCOUNT) showAccount()
+        // The user can turn the service on or off in the system settings.
+        refreshRemoteRow()
                 }
             }
         }
@@ -156,6 +164,8 @@ class MainActivity : Activity() {
         val speeds = findViewById<TextView>(R.id.setting_speeds)
         val audio = findViewById<TextView>(R.id.setting_audio)
         val subtitles = findViewById<TextView>(R.id.setting_subtitles)
+        remoteRow = findViewById(R.id.setting_remote)
+        remoteRow.setOnClickListener { setUpRemoteKey() }
         fun refresh() {
             history.text = getString(R.string.setting_history, getString(if (s.historyEnabled) R.string.on else R.string.off))
             speeds.text = getString(R.string.setting_speeds, s.speeds.joinToString(", ") { Settings.speedLabel(it) })
@@ -167,6 +177,7 @@ class MainActivity : Activity() {
                 R.string.setting_subtitles,
                 s.subtitleLanguage.ifEmpty { null }?.let { Settings.languageName(it) } ?: getString(R.string.off),
             )
+            refreshRemoteRow()
         }
         history.setOnClickListener {
             s.historyEnabled = !s.historyEnabled
@@ -198,6 +209,46 @@ class MainActivity : Activity() {
             }
         }
         refresh()
+    }
+
+    private fun refreshRemoteRow() {
+        val code = app.settings.remoteKeyCode
+        val state = when {
+            !RemoteKeyService.isEnabled(this) -> getString(R.string.remote_service_off)
+            code == KeyEvent.KEYCODE_UNKNOWN -> getString(R.string.remote_not_set)
+            else -> getString(R.string.remote_key, KeyEvent.keyCodeToString(code).removePrefix("KEYCODE_"))
+        }
+        remoteRow.text = getString(R.string.setting_remote, state)
+    }
+
+    /** Asks the user to turn on the service, or saves the next key that the service gets. */
+    private fun setUpRemoteKey() {
+        if (!RemoteKeyService.isEnabled(this)) {
+            val component = ComponentName(this, RemoteKeyService::class.java).flattenToShortString()
+            dialog().setTitle(R.string.remote_off_title)
+                .setMessage(getString(R.string.remote_off_message, component))
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            return
+        }
+        val d = dialog().setTitle(R.string.remote_learn_title)
+            .setMessage(R.string.remote_learn_message)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setNeutralButton(R.string.remote_clear) { _, _ ->
+                app.settings.remoteKeyCode = KeyEvent.KEYCODE_UNKNOWN
+                refreshRemoteRow()
+            }
+            .create()
+        d.setOnDismissListener { RemoteKeyService.learner = null }
+        RemoteKeyService.learner = { code ->
+            runOnUiThread {
+                app.settings.remoteKeyCode = code
+                refreshRemoteRow()
+                d.setOnDismissListener(null)
+                d.dismiss()
+            }
+        }
+        d.show()
     }
 
     /** A single-choice list: [emptyLabel] (stored as "") and the common languages. */
