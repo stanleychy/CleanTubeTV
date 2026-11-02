@@ -31,8 +31,6 @@ data class PlayerInfo(
     val formats: List<StreamFormat>,
     val hlsUrl: String?,
     val captions: List<CaptionTrack>,
-    val statsPlaybackUrl: String?,
-    val statsWatchtimeUrl: String?,
 )
 
 class PlaybackException(message: String) : Exception(message)
@@ -60,7 +58,6 @@ object PlayerParser {
                     isAuto = c.optString("kind") == "asr",
                 )
             }
-        val tracking = r.optJSONObject("playbackTracking")
         return PlayerInfo(
             videoId = videoId,
             title = details?.optString("title").orEmpty(),
@@ -70,8 +67,6 @@ object PlayerParser {
             formats = formats,
             hlsUrl = sd?.optString("hlsManifestUrl")?.ifEmpty { null },
             captions = captions,
-            statsPlaybackUrl = tracking?.obj("videostatsPlaybackUrl")?.optString("baseUrl")?.ifEmpty { null },
-            statsWatchtimeUrl = tracking?.obj("videostatsWatchtimeUrl")?.optString("baseUrl")?.ifEmpty { null },
         )
     }
 

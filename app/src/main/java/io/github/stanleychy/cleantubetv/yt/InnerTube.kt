@@ -19,14 +19,39 @@ class InnerTube(private val context: Context, private val auth: Auth) {
         return call("browse", Clients.TV, body, withAuth = true)
     }
 
-    /** Player request for playback. VISIONOS returns direct URLs without sign-in. */
-    fun player(videoId: String, client: Client = Clients.VISIONOS): JSONObject {
+    /**
+     * Player request. VISIONOS returns direct URLs without sign-in, so playback uses it.
+     * Use the TV client with [withAuth] to get the playbackTracking URLs for the account.
+     */
+    fun player(videoId: String, client: Client = Clients.VISIONOS, withAuth: Boolean = false): JSONObject {
         val body = JSONObject()
             .put("context", context(client, forBrowse = false))
             .put("videoId", videoId)
             .put("racyCheckOk", true)
             .put("contentCheckOk", true)
-        return call("player", client, body, withAuth = false)
+        if (client == Clients.TV) {
+            TvAppInfoProvider.get(context).signatureTimestamp?.let { sts ->
+                body.put(
+                    "playbackContext",
+                    JSONObject().put(
+                        "contentPlaybackContext",
+                        JSONObject().put("html5Preference", "HTML5_PREF_WANTS").put("signatureTimestamp", sts),
+                    ),
+                )
+            }
+        }
+        return call("player", client, body, withAuth = withAuth)
+    }
+
+    /** The signed-in account (name, email or handle, photo). Returns null when no account item is found. */
+    fun account(): AccountInfo? {
+        val body = JSONObject()
+            .put("context", context(Clients.TV, forBrowse = false))
+            .put(
+                "accountReadMask",
+                JSONObject().put("returnOwner", true).put("returnBrandAccounts", true).put("returnPersonaAccounts", false),
+            )
+        return AccountInfo.parse(call("account/accounts_list", Clients.TV, body, withAuth = true))
     }
 
     private fun context(c: Client, forBrowse: Boolean): JSONObject {
