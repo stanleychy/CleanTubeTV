@@ -25,7 +25,7 @@ To explore the code with an AI coding agent, refer to [AGENTS.md](AGENTS.md).
 - The app has no native libraries, no analytics, no crash reporter, no auto-updater and no remote configuration.
 - The app does not download code at run time.
 - Gradle uses only Google Maven and Maven Central.
-- Gradle checks the SHA-256 of each artifact (`gradle/verification-metadata.xml`) and each dependency version (`*.lockfile`).
+- Gradle checks the PGP signature or the SHA-256 of each artifact (`gradle/verification-metadata.xml`, `gradle/verification-keyring.keys`) and each dependency version (`*.lockfile`).
 - The Gradle wrapper has a pinned SHA-256 (`gradle/wrapper/gradle-wrapper.properties`).
 - The runtime libraries are AndroidX Media3, AndroidX RecyclerView and their AndroidX, Guava and Kotlin dependencies.
 

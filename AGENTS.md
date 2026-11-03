@@ -71,7 +71,7 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 | `settings/Settings.kt` | User settings in SharedPreferences. |
 | `vendor/ejs/` | Vendored yt-dlp EJS solver. Not in the APK and not used now. Kept for a future fallback. |
 | `docs/research/smarttube-architecture.md` | Research notes: SmartTube design, YouTube restrictions, design decisions. Read section 8 and 9 first. |
-| `gradle/verification-metadata.xml`, `*.lockfile` | SHA-256 of each artifact and the locked versions. |
+| `gradle/verification-metadata.xml`, `gradle/verification-keyring.keys`, `*.lockfile` | Trusted PGP keys and SHA-256 of each artifact, the public keys, and the locked versions. |
 | `.github/workflows/` | `ci.yml` (build and lint), `conventional-commits.yml` (title and commit check) and `release.yml` (signed release APK with release notes). |
 | `.github/scripts/changelog.py` | Makes the release notes from the Conventional Commits since the last `v*` tag. |
 | `docs/repository-security.md` | A record of all GitHub repository settings, including the rulesets. The settings in GitHub are the source of truth. |
