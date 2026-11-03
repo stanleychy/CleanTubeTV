@@ -5,6 +5,8 @@ import io.github.stanleychy.cleantubetv.net.Http
 import org.json.JSONArray
 import java.net.URLEncoder
 import java.security.MessageDigest
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 data class Segment(val startMs: Long, val endMs: Long, val category: String)
 
@@ -23,6 +25,15 @@ object SponsorBlock {
     /** Pauses before the second and the third attempt, in milliseconds. */
     private val RETRY_DELAYS_MS = longArrayOf(5_000, 15_000)
 
+    /** The server answers after 30 seconds or more at times. Nothing waits for the reply, so a long timeout is fine. */
+    private const val READ_TIMEOUT_MS = 60_000
+
+    /**
+     * Threads for the lookups. A lookup can take minutes with the retries, so it does not use the shared
+     * I/O pool of the app, where it would hold a thread that the feeds and the player need.
+     */
+    val executor: ExecutorService = Executors.newCachedThreadPool { r -> Thread(r, "sponsorblock") }
+
     /**
      * The segments to skip. The SponsorBlock server is slow at times, so the lookup tries up to three times
      * with increasing pauses. It tries again only after a network error, a timeout, HTTP 429 or a 5xx reply.
@@ -39,7 +50,7 @@ object SponsorBlock {
                 Thread.sleep(RETRY_DELAYS_MS[attempt - 1])
             }
             try {
-                val r = Http.request(url, headers = mapOf("User-Agent" to Http.APP_USER_AGENT))
+                val r = Http.request(url, headers = mapOf("User-Agent" to Http.APP_USER_AGENT), readTimeoutMs = READ_TIMEOUT_MS)
                 when {
                     r.ok -> return parse(videoId, r.body).also { Log.i(TAG, "${it.size} segments to skip (attempt ${attempt + 1})") }
                     r.code == 404 -> return emptyList()
