@@ -24,7 +24,7 @@ object SponsorBlock {
         val prefix = sha256Hex(videoId).take(4)
         val cats = URLEncoder.encode(JSONArray(CATEGORIES).toString(), "UTF-8")
         val actions = URLEncoder.encode("""["skip"]""", "UTF-8")
-        val r = Http.request("$API$prefix?categories=$cats&actionTypes=$actions")
+        val r = Http.request("$API$prefix?categories=$cats&actionTypes=$actions", headers = mapOf("User-Agent" to Http.APP_USER_AGENT))
         if (r.code == 404 || !r.ok) {
             emptyList()
         } else {

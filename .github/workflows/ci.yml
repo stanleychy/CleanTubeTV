@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build:
-    # Branch protection requires this check name. Do not change it without updating .github/rulesets/protect-main.json.
+    # The "Protect main" ruleset requires this check name (docs/repository-security.md). Change both together.
     name: build
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -44,6 +44,8 @@ jobs:
         run: ./gradlew --no-daemon assembleDebug assembleRelease lintDebug
 
       - name: Upload the debug APK
+        # Not for a pull request from a fork: an APK built from code that is not reviewed must not carry the name of this repository.
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cleantubetv-debug-${{ github.sha }}

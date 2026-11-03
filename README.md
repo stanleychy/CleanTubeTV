@@ -25,7 +25,7 @@ To explore the code with an AI coding agent, refer to [AGENTS.md](AGENTS.md).
 - The app has no native libraries, no analytics, no crash reporter, no auto-updater and no remote configuration.
 - The app does not download code at run time.
 - Gradle uses only Google Maven and Maven Central.
-- Gradle checks the SHA-256 of each artifact (`gradle/verification-metadata.xml`) and each dependency version (`*.lockfile`).
+- Gradle checks the PGP signature or the SHA-256 of each artifact (`gradle/verification-metadata.xml`, `gradle/verification-keyring.keys`) and each dependency version (`*.lockfile`).
 - The Gradle wrapper has a pinned SHA-256 (`gradle/wrapper/gradle-wrapper.properties`).
 - The runtime libraries are AndroidX Media3, AndroidX RecyclerView and their AndroidX, Guava and Kotlin dependencies.
 
@@ -155,6 +155,8 @@ To stop the function, select the row again and select **Clear**. You can also tu
 
 The app accepts `youtube.com`, `youtu.be` and `vnd.youtube:` links. A video link starts the player. If the link has a start time (`t=90`, `t=1m30s` or `start=90`), playback starts at that time. Other links open the main screen.
 
+When a link starts the playback, the app sends watch reports only after you push a key on the remote. Thus an app cannot add videos to your Watch History without you.
+
 Android opens `https` links in the official YouTube app first, because that app is verified for these domains. To use CleanTube TV for these links, do one of these steps:
 
 - Approve the domains for CleanTube TV (recommended):
@@ -215,10 +217,10 @@ Refer to [CONTRIBUTING.md](CONTRIBUTING.md). To report a security problem, refer
 
 ## Vendored files
 
-The directory `app/src/main/assets/ejs` contains the yt-dlp EJS solver. The current version of the app does not use it. It is kept for a future fallback that must solve the YouTube signature and `n` challenges. Refer to `app/src/main/assets/ejs/README.md`.
+The directory `vendor/ejs` contains the yt-dlp EJS solver. The current version of the app does not use it. It is kept for a future fallback that must solve the YouTube signature and `n` challenges. Refer to `vendor/ejs/README.md`.
 
 ## License
 
 CleanTube TV is free software. You can redistribute it and change it under the terms of the [GNU General Public License version 3](LICENSE). It has no warranty.
 
-The vendored files in `app/src/main/assets/ejs` have their own licenses (Unlicense, ISC and MIT). Refer to `app/src/main/assets/ejs/README.md`.
+The vendored files in `vendor/ejs` have their own licenses (Unlicense, ISC and MIT). Refer to `vendor/ejs/README.md`.

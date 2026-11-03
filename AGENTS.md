@@ -37,7 +37,7 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 - Do not add analytics, crash reporting, auto-update, remote configuration or native libraries.
 - Do not add code that downloads and runs code (JavaScript, DEX) at run time.
 - Never print, log or commit an OAuth token, a cookie, a keystore, a keystore password or `local.properties`.
-- Never send account data or the OAuth token to a host other than `www.youtube.com`.
+- Never send account data or the OAuth token to a host other than `www.youtube.com` (InnerTube, OAuth) and `s.youtube.com` (watch-time pings). The allowed hosts are in `yt/Scraped.kt`.
 - Send the OAuth token only from the TV client (`Clients.TV`). Never send it from a signed-out client.
 - Check each value that comes from a YouTube page or reply with `yt/Scraped.kt` before you put it in a header, a JSON body or a URL. Add a new check there for a new value.
 - Keep the visitor ID of the signed-in TV session separate from the visitor ID of signed-out playback (see "Account safety").
@@ -69,12 +69,12 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 | `ui/LinkActivity.kt` | Opens `youtube.com`, `youtu.be` and `vnd.youtube:` links, with the start time. |
 | `remote/RemoteKeyService.kt` | Accessibility service that only filters keys. It opens the app with the remote YouTube button. |
 | `settings/Settings.kt` | User settings in SharedPreferences. |
-| `app/src/main/assets/ejs/` | Vendored yt-dlp EJS solver. Not used now. Kept for a future fallback. |
+| `vendor/ejs/` | Vendored yt-dlp EJS solver. Not in the APK and not used now. Kept for a future fallback. |
 | `docs/research/smarttube-architecture.md` | Research notes: SmartTube design, YouTube restrictions, design decisions. Read section 8 and 9 first. |
-| `gradle/verification-metadata.xml`, `*.lockfile` | SHA-256 of each artifact and the locked versions. |
+| `gradle/verification-metadata.xml`, `gradle/verification-keyring.keys`, `*.lockfile` | Trusted PGP keys and SHA-256 of each artifact, the public keys, and the locked versions. |
 | `.github/workflows/` | `ci.yml` (build and lint), `conventional-commits.yml` (title and commit check) and `release.yml` (signed release APK with release notes). |
 | `.github/scripts/changelog.py` | Makes the release notes from the Conventional Commits since the last `v*` tag. |
-| `.github/rulesets/`, `docs/repository-security.md` | Branch and tag rulesets, and a record of all repository settings. |
+| `docs/repository-security.md` | A record of all GitHub repository settings, including the rulesets. The settings in GitHub are the source of truth. |
 
 All `.kt` paths in the table, except `App.kt`, are under `app/src/main/java/io/github/stanleychy/cleantubetv/`.
 
@@ -103,7 +103,7 @@ If VISIONOS stops working, the planned fallback is ANDROID_VR. The TV client nee
 
 ### Watch history
 
-`WatchReporter` sends one extra signed-in TVHTML5 player request, only to get the `playbackTracking` URLs for the account. It sends the pings with the TV User-Agent and the token. At each seek it ends the watched segment. The user can set history to off in Settings.
+`WatchReporter` sends one extra signed-in TVHTML5 player request, only to get the `playbackTracking` URLs for the account. `Scraped.trackingUrl()` accepts only https URLs on `s.youtube.com` or `www.youtube.com`. It sends the pings with the TV User-Agent and the token. At each seek it ends the watched segment. When a link from another app started the playback, the reports start at the first key press. The user can set history to off in Settings.
 
 ## Account safety
 

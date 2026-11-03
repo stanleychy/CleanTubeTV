@@ -18,6 +18,7 @@ class LinkActivity : Activity() {
             Intent(this, PlayerActivity::class.java)
                 .putExtra(PlayerActivity.EXTRA_ID, id)
                 .putExtra(PlayerActivity.EXTRA_START_MS, startMs(uri))
+                .putExtra(PlayerActivity.EXTRA_FROM_LINK, true)
         } else {
             Intent(this, MainActivity::class.java)
         }

@@ -2,9 +2,12 @@ package io.github.stanleychy.cleantubetv.auth
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import android.util.Log
 import java.security.KeyStore
+import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -18,7 +21,19 @@ class TokenStore(context: Context) {
     private val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
 
     var refreshToken: String?
-        get() = prefs.getString(KEY_REFRESH, null)?.let { runCatching { decrypt(it) }.getOrNull() }
+        get() {
+            val stored = prefs.getString(KEY_REFRESH, null) ?: return null
+            return try {
+                decrypt(stored)
+            } catch (e: Exception) {
+                // The key is gone or is not the key that encrypted the value: the value can never be read again.
+                // Other errors (for example a Keystore service problem) can be temporary, so the value stays.
+                val permanent = e is AEADBadTagException || e is KeyPermanentlyInvalidatedException
+                Log.w(TAG, "cannot decrypt the stored refresh token" + if (permanent) ", sign-in removed" else "", e)
+                if (permanent) prefs.edit().remove(KEY_REFRESH).apply()
+                null
+            }
+        }
         set(value) {
             if (value == null) prefs.edit().remove(KEY_REFRESH).apply()
             else prefs.edit().putString(KEY_REFRESH, encrypt(value)).apply()
@@ -59,6 +74,8 @@ class TokenStore(context: Context) {
     }
 
     private companion object {
+        /** The same tag as Auth, so that "adb logcat -s Auth" shows it. */
+        const val TAG = "Auth"
         const val ALIAS = "cleantube_refresh_token"
         const val TRANSFORM = "AES/GCM/NoPadding"
         const val IV_LEN = 12

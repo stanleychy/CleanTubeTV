@@ -52,19 +52,19 @@ Write instructions (README, guides, comments that tell the reader what to do) in
 
 ## Dependencies and checksums
 
-Gradle checks each artifact against `gradle/verification-metadata.xml` and each version against the lockfiles.
+Gradle checks each artifact against `gradle/verification-metadata.xml` and each version against the lockfiles. An artifact with a PGP signature must have a signature from a trusted key. The public keys are in `gradle/verification-keyring.keys`, so the build does not need a key server. An artifact without a signature, or with a key that no key server has (`ignored-keys`), must have the recorded SHA-256.
 
 When a dependency change is approved:
 
 1. Change the version in `gradle/libs.versions.toml`.
-2. Update the lockfiles and the checksums:
+2. Update the lockfiles, the signatures, the checksums and the keyring:
 
    ```
-   ./gradlew --write-verification-metadata sha256 --write-locks :app:dependencies assembleDebug assembleRelease lintDebug
+   ./gradlew --write-verification-metadata pgp,sha256 --export-keys --write-locks :app:dependencies assembleDebug assembleRelease lintDebug
    ```
 
-3. Examine the new entries in `gradle/verification-metadata.xml`. Make sure that each new artifact comes from the expected group.
-4. Put the reason for each new artifact in the pull request.
+3. Examine the new entries in `gradle/verification-metadata.xml`. Make sure that each new artifact comes from the expected group. For a new `trusted-key`, make sure that the key belongs to the publisher of the group (for example, compare it with the key on the project page). For a new `ignored-key`, try the command again later: key servers are not always available.
+4. Put the reason for each new artifact and each new key in the pull request.
 
 ## Review and merge
 

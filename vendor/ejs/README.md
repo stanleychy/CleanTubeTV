@@ -1,7 +1,7 @@
 # Vendored JavaScript: yt-dlp EJS solver
 
 These files solve the YouTube player signature and `n` challenges.
-The app runs them in the system WebView. The app never downloads JavaScript at run time.
+The app does not use them now. They are not in the APK. A future fallback can run them in the system WebView. The app never downloads JavaScript at run time.
 
 | File | Source | License |
 |---|---|---|
