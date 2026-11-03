@@ -30,7 +30,7 @@ gh api repos/stanleychy/CleanTubeTV/environments/release
 | Dependabot security updates | On | Dependabot opens pull requests for security fixes. |
 | Dependabot version updates | GitHub Actions pins only (`.github/dependabot.yml`) | Gradle updates need new checksums and a review (CONTRIBUTING.md). |
 | Secret scanning and push protection | On | GitHub blocks a push that contains a known secret format. |
-| Secret scanning: non-provider patterns | Off | Optional. It also finds generic secrets, for example a password in a properties file. |
+| Secret scanning: generic (non-provider) patterns and validity checks | Not available | These need GitHub Secret Protection, which GitHub sells only for organization-owned repositories. A user-owned repository on GitHub Free has no setting for them. The API shows them as "disabled". |
 | Private vulnerability reporting | On | SECURITY.md tells reporters to use it. |
 | Code scanning | CodeQL default setup | Finds problems in the Kotlin code and the workflows on each pull request. |
 | Build provenance attestations | Automatic (`release.yml`) | Users can verify that GitHub Actions built the APK from this repository. |
