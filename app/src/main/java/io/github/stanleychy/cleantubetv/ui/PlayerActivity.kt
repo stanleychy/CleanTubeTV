@@ -97,9 +97,9 @@ class PlayerActivity : Activity() {
             }
         }
         // The SponsorBlock reply can take long. Playback does not wait for it: the segments apply when they come,
-        // and a segment that already plays is skipped at that moment (see tick).
+        // and a segment that already plays is skipped at that moment (see tick). The lookup stops when the player closes.
         app.io.execute {
-            val segs = SponsorBlock.segments(id)
+            val segs = SponsorBlock.segments(id) { !isFinishing && !isDestroyed }
             runOnUiThread { if (!isFinishing) segments = segs }
         }
     }
