@@ -20,7 +20,7 @@ CAUTION: Do not give your agent your Google password, your OAuth tokens or the c
 
 ## For agents: project summary
 
-CleanTube TV is a small YouTube client for Android TV and Google TV. It shows no ads and skips sponsor segments (SponsorBlock). It is written in Kotlin with plain Android Views. It has no dependency-injection library, no Compose, no Leanback, no OkHttp, no Retrofit and no Gson.
+CleanTube TV is a lean YouTube client for Android TV and Google TV, with fewer distractions: only the Home and Subscriptions feeds, one video at a time, no autoplay, no ads, and automatic skip of sponsor segments (SponsorBlock). It is written in Kotlin with plain Android Views. It has no dependency-injection library, no Compose, no Leanback, no OkHttp, no Retrofit and no Gson.
 
 Main goals, in order:
 
