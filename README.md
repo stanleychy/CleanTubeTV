@@ -1,6 +1,14 @@
 # CleanTube TV
 
-A small YouTube client for Android TV and Google TV. It shows no ads and skips sponsor segments.
+A lean YouTube client for Android TV and Google TV, with fewer distractions. It shows your Home and Subscriptions feeds and plays one video at a time. It has no ads and skips sponsor segments.
+
+What you do not get, on purpose:
+
+- No Shorts tab, no Trending and no notifications. Only Home and Subscriptions.
+- No autoplay. The player stops at the end of a video.
+- No comments and no interaction reminders. SponsorBlock skips sponsor, self-promotion and "like and subscribe" segments.
+- No ads.
+- No analytics, no crash reporter and no auto-updater. The release APK is under 2 MB.
 
 The design is based on a review of SmartTube. Refer to `docs/research/smarttube-architecture.md`.
 
