@@ -3,7 +3,7 @@ plugins {
 }
 
 // The only place for the app version. A release tag must be "v" + this value (see .github/workflows/release.yml).
-val appVersion = "0.1.0"
+val appVersion = "0.1.1"
 
 /** MAJOR.MINOR.PATCH to MAJOR * 10000 + MINOR * 100 + PATCH. For example, 1.2.3 gives 10203. */
 fun versionCodeOf(version: String): Int {
