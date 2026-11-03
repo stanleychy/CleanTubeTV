@@ -1,2 +1,2 @@
-# The maintainer must approve each change to main (see .github/rulesets/protect-main.json).
+# The maintainer must approve each change to main (ruleset "Protect main", see docs/repository-security.md).
 * @stanleychy
