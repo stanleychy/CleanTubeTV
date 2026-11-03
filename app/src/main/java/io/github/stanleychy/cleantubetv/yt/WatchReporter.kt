@@ -3,6 +3,7 @@ package io.github.stanleychy.cleantubetv.yt
 import android.util.Log
 import io.github.stanleychy.cleantubetv.auth.Auth
 import io.github.stanleychy.cleantubetv.net.Http
+import org.json.JSONObject
 import java.security.SecureRandom
 import java.util.Locale
 
@@ -64,8 +65,8 @@ class WatchReporter(private val innerTube: InnerTube, private val auth: Auth, pr
         try {
             val r = innerTube.player(info.videoId, Clients.TV, withAuth = true)
             val tracking = r.optJSONObject("playbackTracking")
-            playbackUrl = tracking?.obj("videostatsPlaybackUrl")?.optString("baseUrl")?.ifEmpty { null }
-            watchtimeUrl = tracking?.obj("videostatsWatchtimeUrl")?.optString("baseUrl")?.ifEmpty { null }
+            playbackUrl = trackingUrl(tracking, "videostatsPlaybackUrl")
+            watchtimeUrl = trackingUrl(tracking, "videostatsWatchtimeUrl")
             val status = r.optJSONObject("playabilityStatus")?.optString("status")
             Log.i(TAG, "TV tracking: status=$status playback=${playbackUrl != null} watchtime=${watchtimeUrl != null}")
         } catch (e: Exception) {
@@ -74,6 +75,15 @@ class WatchReporter(private val innerTube: InnerTube, private val auth: Auth, pr
         return playbackUrl != null || watchtimeUrl != null
     }
 
+    /** The tracking URL in the reply, or null when there is none or when it is not on a YouTube host. */
+    private fun trackingUrl(tracking: JSONObject?, key: String): String? {
+        val raw = tracking?.obj(key)?.optString("baseUrl")?.ifEmpty { null } ?: return null
+        val url = Scraped.trackingUrl(raw)
+        if (url == null) Log.w(TAG, "$key is not on a YouTube host, pings are off")
+        return url
+    }
+
+    /** Sends one ping with the token. The request does not follow redirects, so the token stays on this host. */
     private fun send(kind: String, url: String) {
         try {
             val headers = mutableMapOf("User-Agent" to Clients.TV_UA, "Referer" to "https://www.youtube.com/tv")

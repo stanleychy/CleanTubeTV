@@ -58,6 +58,8 @@ class PlayerActivity : Activity() {
     private lateinit var speedButton: TextView
     private var player: ExoPlayer? = null
     private var reporter: WatchReporter? = null
+    /** The reporter of a playback that a link started. It becomes [reporter] at the first key press. */
+    private var pendingReporter: WatchReporter? = null
     private var segments: List<Segment> = emptyList()
     private val skipped = HashSet<Segment>()
     private val handler = Handler(Looper.getMainLooper())
@@ -117,7 +119,12 @@ class PlayerActivity : Activity() {
         playerView.player = withoutSpeedSetting(p)
         speed = settings.speeds.let { if (1f in it) 1f else it.first() }
         applySpeed()
-        if (settings.historyEnabled && app.auth.isSignedIn) reporter = WatchReporter(app.innerTube, app.auth, info)
+        if (settings.historyEnabled && app.auth.isSignedIn) {
+            val r = WatchReporter(app.innerTube, app.auth, info)
+            // A link from another app starts playback without the user. Such a watch goes to the history only
+            // after the user pushes a key (see dispatchKeyEvent), so that an app cannot fill the Watch History.
+            if (intent.getBooleanExtra(EXTRA_FROM_LINK, false)) pendingReporter = r else reporter = r
+        }
         p.addAnalyticsListener(object : AnalyticsListener {
             override fun onVideoInputFormatChanged(
                 eventTime: AnalyticsListener.EventTime,
@@ -279,6 +286,12 @@ class PlayerActivity : Activity() {
     @SuppressLint("GestureBackNavigation")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_BACK) return super.dispatchKeyEvent(event)
+        // Any other key shows that the user watches: the watch reports of a link-started playback can start.
+        pendingReporter?.let {
+            pendingReporter = null
+            reporter = it
+            report()
+        }
         if (qualityButton.hasFocus()) return super.dispatchKeyEvent(event)
         return playerView.dispatchKeyEvent(event) || super.dispatchKeyEvent(event)
     }
@@ -302,6 +315,8 @@ class PlayerActivity : Activity() {
         const val EXTRA_ID = "video_id"
         const val EXTRA_TITLE = "title"
         const val EXTRA_START_MS = "start_ms"
+        /** True when another app started the playback with a link. */
+        const val EXTRA_FROM_LINK = "from_link"
         private const val TAG = "PlayerActivity"
         private const val REPORT_INTERVAL_MS = 30_000L
     }

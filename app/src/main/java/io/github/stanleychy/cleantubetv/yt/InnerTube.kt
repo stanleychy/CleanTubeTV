@@ -1,6 +1,7 @@
 package io.github.stanleychy.cleantubetv.yt
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.util.Log
 import io.github.stanleychy.cleantubetv.auth.Auth
 import io.github.stanleychy.cleantubetv.net.Http
@@ -84,6 +85,7 @@ class InnerTube(private val context: Context, private val auth: Auth) {
         if (c == Clients.TV) TvAppInfoProvider.get(context).clientVersion ?: c.version else c.version
 
     private val prefs = context.getSharedPreferences("innertube", Context.MODE_PRIVATE)
+    private val debuggable = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
 
     private fun context(c: Client, forBrowse: Boolean): JSONObject {
         val locale = Locale.getDefault()
@@ -123,7 +125,8 @@ class InnerTube(private val context: Context, private val auth: Auth) {
             body = body.toString(),
         )
         if (!r.ok) {
-            Log.w(TAG, "$endpoint HTTP ${r.code}: ${r.body.take(300)}")
+            // A redirect (3xx) is an error too: the request never follows it. Only a debug build logs the reply body.
+            Log.w(TAG, "$endpoint HTTP ${r.code}" + if (debuggable) ": ${r.body.take(300)}" else "")
             throw IOException("YouTube $endpoint request failed (HTTP ${r.code})")
         }
         return JSONObject(r.body).also { keepAnonVisitor(c, it) }

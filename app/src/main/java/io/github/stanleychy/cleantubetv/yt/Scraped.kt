@@ -28,6 +28,13 @@ object Scraped {
     /** The only host that the app accepts for scraped script URLs. */
     private const val HOST = "www.youtube.com"
 
+    /**
+     * The start of a URL that may get the watch-time pings with the token: https, and a host of s.youtube.com
+     * (the TV app sends the pings there) or www.youtube.com. The "/" directly after the host leaves no space for
+     * user info ("@"), a port or a different host. The query is not checked: YouTube can put any value in it.
+     */
+    private val TRACKING_URL = Regex("^https://(s|www)\\.youtube\\.com/")
+
     fun version(v: String?) = v?.takeIf { VERSION.matches(it) }
 
     fun visitor(v: String?) = v?.takeIf { VISITOR.matches(it) }
@@ -55,5 +62,11 @@ object Scraped {
         val ok = u.scheme == "https" && u.host == HOST && u.rawUserInfo == null && u.port == -1 &&
             u.rawPath?.startsWith("/") == true
         return if (ok) full else null
+    }
+
+    /** A playbackTracking URL from a player reply, or null when it does not start with [TRACKING_URL]. */
+    fun trackingUrl(url: String?): String? {
+        val s = url?.replace("\\/", "/") ?: return null
+        return s.takeIf { TRACKING_URL.containsMatchIn(it) && it.none { c -> c.isWhitespace() || c == '\\' } }
     }
 }
