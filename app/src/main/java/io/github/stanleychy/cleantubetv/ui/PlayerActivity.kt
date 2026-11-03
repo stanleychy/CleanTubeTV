@@ -88,15 +88,19 @@ class PlayerActivity : Activity() {
         val subtitleLanguage = app.settings.subtitleLanguage
         app.io.execute {
             val result = runCatching { PlayerParser.parse(id, app.innerTube.player(id)) }
-            val segs = SponsorBlock.segments(id)
             runOnUiThread {
                 if (isFinishing) return@runOnUiThread
-                segments = segs
                 result.onSuccess { start(it, subtitleLanguage) }.onFailure { e ->
                     Log.w(TAG, "player request failed", e)
                     showMessage(getString(R.string.play_error, e.message))
                 }
             }
+        }
+        // The SponsorBlock reply can take long. Playback does not wait for it: the segments apply when they come,
+        // and a segment that already plays is skipped at that moment (see tick).
+        app.io.execute {
+            val segs = SponsorBlock.segments(id)
+            runOnUiThread { if (!isFinishing) segments = segs }
         }
     }
 

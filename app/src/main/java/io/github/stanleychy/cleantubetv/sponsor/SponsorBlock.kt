@@ -24,8 +24,14 @@ object SponsorBlock {
         val prefix = sha256Hex(videoId).take(4)
         val cats = URLEncoder.encode(JSONArray(CATEGORIES).toString(), "UTF-8")
         val actions = URLEncoder.encode("""["skip"]""", "UTF-8")
-        val r = Http.request("$API$prefix?categories=$cats&actionTypes=$actions", headers = mapOf("User-Agent" to Http.APP_USER_AGENT))
+        // The SponsorBlock server is slow at times. Playback does not wait for this reply, so a long read timeout is fine.
+        val r = Http.request(
+            "$API$prefix?categories=$cats&actionTypes=$actions",
+            headers = mapOf("User-Agent" to Http.APP_USER_AGENT),
+            readTimeoutMs = 60_000,
+        )
         if (r.code == 404 || !r.ok) {
+            if (r.code != 404) Log.w(TAG, "segment lookup HTTP ${r.code}")
             emptyList()
         } else {
             val arr = JSONArray(r.body)
@@ -43,6 +49,7 @@ object SponsorBlock {
                         .sortedBy { it.startMs }
                 }
                 .orEmpty()
+                .also { Log.i(TAG, "${it.size} segments to skip") }
         }
     } catch (e: Exception) {
         Log.w(TAG, "segment lookup failed", e)
