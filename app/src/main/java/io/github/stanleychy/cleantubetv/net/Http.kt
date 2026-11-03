@@ -29,12 +29,14 @@ object Http {
         headers: Map<String, String> = emptyMap(),
         body: String? = null,
         followRedirects: Boolean = false,
+        connectTimeoutMs: Int = 15_000,
+        readTimeoutMs: Int = 30_000,
     ): Response {
         val conn = URL(url).openConnection() as HttpURLConnection
         try {
             conn.requestMethod = method
-            conn.connectTimeout = 15_000
-            conn.readTimeout = 30_000
+            conn.connectTimeout = connectTimeoutMs
+            conn.readTimeout = readTimeoutMs
             conn.instanceFollowRedirects = followRedirects
             headers.forEach { (k, v) -> conn.setRequestProperty(k, v) }
             if (body != null) {

@@ -164,6 +164,9 @@ class MainActivity : Activity() {
         val subtitles = findViewById<TextView>(R.id.setting_subtitles)
         remoteRow = findViewById(R.id.setting_remote)
         remoteRow.setOnClickListener { setUpRemoteKey() }
+        val pkg = packageManager.getPackageInfo(packageName, 0)
+        findViewById<TextView>(R.id.setting_version).text =
+            getString(R.string.setting_version, pkg.versionName, pkg.longVersionCode, getString(R.string.build_commit))
         fun refresh() {
             history.text = getString(R.string.setting_history, getString(if (s.historyEnabled) R.string.on else R.string.off))
             speeds.text = getString(R.string.setting_speeds, s.speeds.joinToString(", ") { Settings.speedLabel(it) })
