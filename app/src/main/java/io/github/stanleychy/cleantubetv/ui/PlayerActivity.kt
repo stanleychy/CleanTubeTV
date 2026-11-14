@@ -3,6 +3,7 @@ package io.github.stanleychy.cleantubetv.ui
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -12,6 +13,7 @@ import android.view.View
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.window.OnBackInvokedDispatcher
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -67,6 +69,8 @@ class PlayerActivity : Activity() {
     /** One thread for watch reports, so that YouTube gets the pings in order. */
     private val reportQueue = Executors.newSingleThreadExecutor()
     private var speed = 1f
+    /** True from the Back key-down that hid the controls to its key-up. That push does not also close the player. */
+    private var backHidControls = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,6 +88,7 @@ class PlayerActivity : Activity() {
         })
         qualityButton.setOnClickListener { showQualityDialog() }
         speedButton = addSpeedButton()
+        registerBackCallback()
 
         val id = intent.getStringExtra(EXTRA_ID) ?: return finish()
         showMessage(intent.getStringExtra(EXTRA_TITLE) ?: getString(R.string.loading))
@@ -290,10 +295,38 @@ class PlayerActivity : Activity() {
         message.visibility = View.VISIBLE
     }
 
-    // Back is not intercepted: it goes to super unchanged. TVs have no predictive back gesture.
+    /** Hides the controls if they show. Returns true if it hid them. */
+    private fun hideControls(): Boolean {
+        if (!playerView.isControllerFullyVisible) return false
+        playerView.hideController()
+        return true
+    }
+
+    /**
+     * Back as a key event. The return value is true for each event of the push that hid the controls (key-down,
+     * repeats and key-up), so that a long push does not also close the player.
+     */
+    private fun hideControlsOnBack(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) backHidControls = hideControls()
+        return backHidControls
+    }
+
+    /**
+     * Back as a callback. Android 16 and later send Back to this callback and not as a key event. Earlier
+     * versions ignore the callback and send the key event (see dispatchKeyEvent).
+     */
+    private fun registerBackCallback() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT) {
+            if (!hideControls()) finish()
+        }
+    }
+
+    // Back first hides the controls. With the controls hidden, it goes to super unchanged and closes the player.
+    // A dialog or a menu has its own window and gets Back before this activity. TVs have no predictive back gesture.
     @SuppressLint("GestureBackNavigation")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode == KeyEvent.KEYCODE_BACK) return super.dispatchKeyEvent(event)
+        if (event.keyCode == KeyEvent.KEYCODE_BACK) return hideControlsOnBack(event) || super.dispatchKeyEvent(event)
         // Any other key shows that the user watches: the watch reports of a link-started playback can start.
         pendingReporter?.let {
             pendingReporter = null
