@@ -21,6 +21,18 @@ class InnerTube(private val context: Context, private val auth: Auth) {
     }
 
     /**
+     * Search as the signed-in TV client, the same identity as the feeds. The official TV app does the same.
+     * Thus YouTube keeps the query in the search history of the account.
+     * Pass a query for the first page, or a continuation token that [Scraped.continuation] accepted.
+     */
+    fun search(query: String, continuation: String? = null): JSONObject {
+        val body = JSONObject().put("context", context(Clients.TV, forBrowse = true))
+        // The query is user input. JSONObject.put escapes it.
+        if (continuation != null) body.put("continuation", continuation) else body.put("query", query)
+        return call("search", Clients.TV, body, withAuth = true)
+    }
+
+    /**
      * Player request. VISIONOS returns direct URLs without sign-in, so playback uses it.
      * Use the TV client with [withAuth] to get the playbackTracking URLs for the account.
      */
