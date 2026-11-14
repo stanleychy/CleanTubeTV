@@ -11,6 +11,7 @@
         android:layout_height="match_parent"
         android:focusable="true"
         app:show_buffering="when_playing"
+        app:show_timeout="3000"
         app:show_subtitle_button="true" />
 
     <Button
