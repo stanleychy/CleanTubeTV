@@ -22,16 +22,15 @@ import io.github.stanleychy.cleantubetv.yt.FeedParser
 
 class MainActivity : Activity() {
     private enum class Tab(val browseId: String?) {
-        HOME("default"), SUBSCRIPTIONS("FEsubscriptions"), ACCOUNT(null), SETTINGS(null)
+        HOME("default"), SUBSCRIPTIONS("FEsubscriptions"), SETTINGS(null)
     }
 
     private lateinit var messagePanel: View
     private lateinit var status: TextView
     private lateinit var actionButton: TextView
     private lateinit var grid: RecyclerView
-    private lateinit var accountPanel: View
     private lateinit var settingsPanel: View
-    private lateinit var tabs: Map<Tab, TextView>
+    private lateinit var tabs: Map<Tab, View>
     private lateinit var adapter: FeedAdapter
 
     private var current = Tab.HOME
@@ -50,13 +49,11 @@ class MainActivity : Activity() {
         actionButton.setText(R.string.sign_in)
         actionButton.setOnClickListener { startActivity(Intent(this, SignInActivity::class.java)) }
         grid = findViewById(R.id.grid)
-        accountPanel = findViewById(R.id.account_panel)
         settingsPanel = findViewById(R.id.settings_panel)
         setUpSettings()
         tabs = mapOf(
             Tab.HOME to findViewById(R.id.tab_home),
             Tab.SUBSCRIPTIONS to findViewById(R.id.tab_subs),
-            Tab.ACCOUNT to findViewById(R.id.tab_account),
             Tab.SETTINGS to findViewById(R.id.tab_settings),
         )
         tabs.forEach { (tab, view) -> view.setOnClickListener { select(tab) } }
@@ -77,7 +74,7 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         // Refresh after sign-in.
-        if (current == Tab.ACCOUNT) showAccount()
+        if (current == Tab.SETTINGS) showAccount()
         // The user can turn the service on or off in the system settings.
         refreshRemoteRow()
         if ((current == Tab.HOME || current == Tab.SUBSCRIPTIONS) && app.auth.isSignedIn && adapter.itemCount == 0 && !loading) {
@@ -93,15 +90,14 @@ class MainActivity : Activity() {
         loading = false
         adapter.set(emptyList())
         when (tab) {
-            Tab.ACCOUNT -> showAccount()
-            Tab.SETTINGS -> show(settingsPanel)
+            Tab.SETTINGS -> showSettings()
             else -> load(tab, null)
         }
     }
 
     /** Shows one content view and hides the others. */
     private fun show(view: View) {
-        for (v in listOf(messagePanel, grid, accountPanel, settingsPanel)) v.visibility = if (v == view) View.VISIBLE else View.GONE
+        for (v in listOf(messagePanel, grid, settingsPanel)) v.visibility = if (v == view) View.VISIBLE else View.GONE
     }
 
     private fun showMessage(text: String, withSignIn: Boolean = false) {
@@ -110,8 +106,13 @@ class MainActivity : Activity() {
         actionButton.visibility = if (withSignIn) View.VISIBLE else View.GONE
     }
 
+    private fun showSettings() {
+        show(settingsPanel)
+        showAccount()
+    }
+
+    /** Fills the account section at the top of the Settings panel. Asks YouTube for the account only one time. */
     private fun showAccount() {
-        show(accountPanel)
         val photo = findViewById<ImageView>(R.id.account_photo)
         val name = findViewById<TextView>(R.id.account_name)
         val detail = findViewById<TextView>(R.id.account_detail)
@@ -147,10 +148,10 @@ class MainActivity : Activity() {
                 result.onFailure { Log.w(TAG, "account request failed", it) }
                 val info = result.getOrNull()
                 if (info == null) {
-                    if (current == Tab.ACCOUNT) detail.setText(R.string.account_load_error)
+                    if (current == Tab.SETTINGS) detail.setText(R.string.account_load_error)
                 } else {
                     account = info
-                    if (current == Tab.ACCOUNT) showAccount()
+                    if (current == Tab.SETTINGS) showAccount()
                 }
             }
         }
