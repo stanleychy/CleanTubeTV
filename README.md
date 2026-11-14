@@ -196,8 +196,23 @@ adb shell am start -a android.intent.action.VIEW -d "https://youtu.be/VIDEO_ID"
 To see the app log, run this command while the app runs:
 
 ```
-adb logcat -s Auth InnerTube PlayerActivity MainActivity SponsorBlock WatchReporter ExoPlayerImpl
+adb logcat -s Auth InnerTube Feed PlayerActivity MainActivity SponsorBlock WatchReporter ExoPlayerImpl
 ```
+
+If an ad shows as a video card in a feed, do these steps:
+
+1. Install a debug build of the app.
+2. Run this command:
+
+   ```
+   adb logcat -c && adb logcat -s Feed > feed-log.txt
+   ```
+
+3. Open the feed in the app and move to the ad.
+4. Stop the command with Ctrl+C.
+5. Open an issue and attach `feed-log.txt`.
+
+The `Feed` lines contain only the names of JSON keys and their counts. They contain no titles, video IDs or account data.
 
 ## Warning
 

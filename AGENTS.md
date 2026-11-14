@@ -59,6 +59,7 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 | `yt/Scraped.kt` | Format and host checks for all values from YouTube. |
 | `yt/InnerTube.kt` | `browse`, `player` and `account/accounts_list` requests. Selects the visitor ID, version and token for each client. `playback()` does the bot-check recovery and the client fallback. |
 | `yt/Feed.kt`, `yt/FeedItemsMapper.kt` | Parse TV browse replies (Home, Subscriptions) into feed items. |
+| `yt/FeedAds.kt` | The rules that keep ads out of the feeds: ad containers and ad markers. |
 | `yt/PlayerInfo.kt` | Parse the player reply into stream formats. |
 | `yt/DashManifest.kt` | Build a DASH MPD from the stream formats for ExoPlayer. |
 | `yt/WatchReporter.kt` | Send watch-time pings, so that videos show in Watch History with a resume point. |
@@ -92,6 +93,8 @@ The token scope is YouTube only. It gives no access to Gmail, Drive or other Goo
 ### Feeds
 
 `InnerTube.browse()` sends a signed-in TVHTML5 request. `Feed.kt` parses the reply.
+
+YouTube puts ads in the feed as normal tiles in an `adSlotRenderer`. `FeedAds.kt` has the keys of the ad containers and the ad markers. The parser does not go into an ad container, and it drops a tile that has an ad marker. The rules use JSON keys only, not translated text. In a debug build, the `Feed` log tag shows the structure of each reply (keys and enum values only).
 
 ### Playback
 
@@ -131,7 +134,7 @@ Requirements: JDK 17 or later, Android SDK with `platforms;android-36`, `build-t
 ./gradlew assembleDebug lintDebug
 adb connect TV_IP:PORT
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb logcat -s Auth InnerTube PlayerActivity MainActivity SponsorBlock WatchReporter ExoPlayerImpl
+adb logcat -s Auth InnerTube Feed PlayerActivity MainActivity SponsorBlock WatchReporter ExoPlayerImpl
 ```
 
 A debug build has the package name `io.github.stanleychy.cleantubetv.debug`, the name "CleanTube TV Debug" and an amber icon (`app/src/debug/res`). It installs next to the release build and has its own sign-in. Do not uninstall the release build to install a debug build.
@@ -148,6 +151,7 @@ There are no unit tests now. Test each change on an Android TV device or emulato
 | Playback stops with `ERROR_CODE_IO_BAD_HTTP_STATUS` after a fallback to ANDROID_VR | The stream server wants a PoToken for that format. See "Playback". |
 | "The page needs to be reloaded" in the TV player request | `TvAppInfoProvider.signatureTimestamp()`. |
 | Feeds are empty after a YouTube change | `yt/Feed.kt`, `yt/FeedItemsMapper.kt`. Save a reply and compare the JSON structure. |
+| An ad shows as a video card in a feed | Install a debug build. Run `adb logcat -s Feed`. Find the key that marks the ad in the `reply:` lines. Add the key to `yt/FeedAds.kt`. |
 | Videos do not show in Watch History | `yt/WatchReporter.kt`. Look for `TV tracking: status=` and `ping OK` in the log. |
 | A scraped value is rejected | The exception text names the value. Compare the live value with the pattern in `yt/Scraped.kt`. |
 | Add a setting | `settings/Settings.kt`, the Settings tab in `ui/MainActivity.kt`, `res/layout/activity_main.xml`, `res/values/strings.xml`. |
