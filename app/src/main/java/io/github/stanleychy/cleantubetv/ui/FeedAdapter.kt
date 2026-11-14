@@ -53,8 +53,11 @@ class FeedAdapter(
         private val title: TextView = v.findViewById(R.id.title)
         private val sub: TextView = v.findViewById(R.id.subtitle)
         private val duration: TextView = v.findViewById(R.id.duration)
+        private val marquees = listOf(FocusMarquee(title), FocusMarquee(sub))
 
         fun bind(video: Video) {
+            // RecyclerView uses a holder again for a different video. Start from the normal state.
+            marquees.forEach { it.stop() }
             title.text = video.title
             sub.text = listOfNotNull(video.channel, video.meta).joinToString(" · ")
             val badge = if (video.isLive) "LIVE" else video.duration
@@ -65,6 +68,7 @@ class FeedAdapter(
             itemView.setOnFocusChangeListener { view, has ->
                 view.animate().scaleX(if (has) 1.06f else 1f).scaleY(if (has) 1.06f else 1f).setDuration(120).start()
                 view.elevation = if (has) 8f else 0f
+                marquees.forEach { it.set(has) }
             }
         }
     }
