@@ -323,11 +323,15 @@ class MainActivity : Activity() {
         }
     }
 
-    /** Gets one page of search results. The thread gets a copy of the query, because the user can change it. */
+    /**
+     * Gets one page of search results. The thread gets a copy of the query, because the user can change it.
+     * The history setting applies to search also: when it is off, the search goes out with no account.
+     */
     private fun loadSearch(token: String?, gen: Int) {
         val text = query
+        val withAccount = app.settings.historyEnabled
         app.io.execute {
-            val result = runCatching { SearchParser.parse(app.innerTube.search(text, token)) }
+            val result = runCatching { SearchParser.parse(app.innerTube.search(text, token, withAccount)) }
             runOnUiThread { showPage(result, token, gen) }
         }
     }

@@ -7,7 +7,10 @@ import java.util.Locale
 class Settings(context: Context) {
     private val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
-    /** Send watch reports to YouTube, so videos show in Watch History and resume points. */
+    /**
+     * Send watch reports to YouTube, so videos show in Watch History and resume points.
+     * Send searches with the account, so that YouTube keeps them in the search history. Off stops the two.
+     */
     var historyEnabled: Boolean
         get() = prefs.getBoolean(KEY_HISTORY, true)
         set(v) = prefs.edit().putBoolean(KEY_HISTORY, v).apply()

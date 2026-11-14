@@ -124,7 +124,7 @@ ANDROID_VR is a weak fallback. Its player reply has direct stream URLs, but the 
 ### Search
 
 1. The user selects the search field in the tab bar and pushes OK. `SearchField` opens the on-screen keyboard.
-2. The search action of the keyboard starts the search. `InnerTube.search()` sends a signed-in TVHTML5 request, the same identity as the feeds. The official TV app does the same. Thus YouTube keeps the query in the search history of the account.
+2. The search action of the keyboard starts the search. When the history setting is on, `InnerTube.search()` sends a signed-in TVHTML5 request, the same identity as the feeds. The official TV app does the same. Thus YouTube keeps the query in the search history of the account. When the history setting is off, it sends the request as `Clients.TV_SIGNED_OUT`: no token and a different visitor ID, so that YouTube cannot link the query to the account.
 3. `SearchParser` reads the `lockupViewModel` items. It keeps only videos (no Shorts, channels or playlists). `Scraped` checks the video ID, the thumbnail URL and the continuation token.
 4. `MainActivity` shows the results in the grid of the feeds. Back goes to Home.
 
