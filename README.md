@@ -184,8 +184,8 @@ You can send a video from the official YouTube app on a phone or tablet to Clean
 Link the phone one time:
 
 1. In CleanTube TV, go to the **Settings** tab and select **Link with TV code**. The TV shows a 12-digit code.
-2. On the phone, open the YouTube app. Go to **Settings > General > Watch on TV**.
-3. Select **Enter TV code** and enter the code. The TV shows "A phone is linked".
+2. On the phone, open a video in the YouTube app. Select the cast button, then select **Link with TV code**.
+3. Enter the code. The TV shows "A phone is linked".
 
 Cast a video:
 

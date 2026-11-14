@@ -137,7 +137,7 @@ The app does not store the queries and does not get search suggestions.
 ### Cast from a phone (Link with TV code)
 
 1. `CastActivity` calls `CastController.requestPairingCode()`. `LoungeApi` gets a screen ID (`pairing/generate_screen_id`), a lounge token (`pairing/get_lounge_token_batch`) and a 12-digit pairing code (`pairing/get_pairing_code`).
-2. The user enters the code in the official YouTube app on the phone (**Settings > General > Watch on TV > Enter TV code**).
+2. The user enters the code in the official YouTube app on the phone (open a video, select the cast button, then **Link with TV code**).
 3. `LoungeSession` opens a session (`bc/bind`) and reads commands from a long poll. When a phone connects, `ScreenStore` keeps the screen, so the link stays after the app stops.
 4. `CastCommand` accepts `setPlaylist` and `setVideo` (play the selected video), `play`, `pause`, `seekTo`, `stopVideo`, `getNowPlaying`, `loungeStatus` and `remoteConnected`. The app ignores all other commands (queue, next, previous, autoplay, volume).
 5. `CastController` opens `PlayerActivity` for the video. `PlayerActivity` gives its player to `CastController.onPlayerReady()`. `CastPlayback` sends `nowPlaying` and `onStateChange` to the phone.
