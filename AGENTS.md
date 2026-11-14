@@ -57,14 +57,17 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 | `yt/Clients.kt` | InnerTube client identities (TVHTML5, VISIONOS and ANDROID_VR) and the sequence of the playback clients. Update these values when YouTube changes its API. |
 | `yt/TvAppInfo.kt` | Values read from `https://www.youtube.com/tv`: visitor ID, OAuth client, `signatureTimestamp`, client version. Cached for 24 hours. |
 | `yt/Scraped.kt` | Format and host checks for all values from YouTube. |
-| `yt/InnerTube.kt` | `browse`, `player` and `account/accounts_list` requests. Selects the visitor ID, version and token for each client. `playback()` does the bot-check recovery and the client fallback. |
+| `yt/InnerTube.kt` | `browse`, `search`, `player` and `account/accounts_list` requests. Selects the visitor ID, version and token for each client. `playback()` does the bot-check recovery and the client fallback. |
+| `yt/SearchParser.kt` | Parse TV search replies (`lockupViewModel` items) into feed items. Only videos become items. |
 | `yt/Feed.kt`, `yt/FeedItemsMapper.kt` | Parse TV browse replies (Home, Subscriptions) into feed items. |
 | `yt/FeedAds.kt` | The rules that keep ads out of the feeds: ad containers and ad markers. |
 | `yt/PlayerInfo.kt` | Parse the player reply into stream formats. |
 | `yt/DashManifest.kt` | Build a DASH MPD from the stream formats for ExoPlayer. |
 | `yt/WatchReporter.kt` | Send watch-time pings, so that videos show in Watch History with a resume point. |
 | `sponsor/SponsorBlock.kt` | Get skip segments with the SponsorBlock hash-prefix API (the full video ID is not sent). |
-| `ui/MainActivity.kt` | Tabs: Home, Subscriptions, Account, Settings. |
+| `ui/MainActivity.kt` | Tab bar: Home, Subscriptions, the search field and the Settings icon (gear) at the right. The Settings panel shows the account and the setting rows. |
+| `ui/SearchField.kt` | The search field in the tab bar: on-screen keyboard, search action, focus with the D-pad. |
+| `ui/BackOverride.kt` | Back callback for Android 16 and later. Back from the search results goes to Home. |
 | `ui/PlayerActivity.kt` | ExoPlayer (Media3), quality and speed controls, SponsorBlock skip, watch reports. |
 | `ui/QualityOptions.kt` | The rows of the quality menu: one for each resolution that the device can play. |
 | `ui/SignInActivity.kt` | Shows the activation code. |
@@ -109,6 +112,15 @@ If VISIONOS gives no stream, `InnerTube.playback()` tries ANDROID_VR, the second
 
 ANDROID_VR is a weak fallback. Its player reply has direct stream URLs, but the stream server refuses some requests that have no PoToken (HTTP 403 on parts of the low-bitrate audio formats, verified 2026-11-13). No other client gives direct URLs without sign-in at this time: IOS and ANDROID give only SABR streams. The TV client needs the signature and `n` solver (the vendored EJS files).
 
+### Search
+
+1. The user selects the search field in the tab bar and pushes OK. `SearchField` opens the on-screen keyboard.
+2. The search action of the keyboard starts the search. `InnerTube.search()` sends a signed-in TVHTML5 request, the same identity as the feeds. The official TV app does the same. Thus YouTube keeps the query in the search history of the account.
+3. `SearchParser` reads the `lockupViewModel` items. It keeps only videos (no Shorts, channels or playlists). `Scraped` checks the video ID, the thumbnail URL and the continuation token.
+4. `MainActivity` shows the results in the grid of the feeds. Back goes to Home.
+
+The app does not store the queries and does not get search suggestions.
+
 ### Watch history
 
 `WatchReporter` sends one extra signed-in TVHTML5 player request, only to get the `playbackTracking` URLs for the account. `Scraped.trackingUrl()` accepts only https URLs on `s.youtube.com` or `www.youtube.com`. It sends the pings with the TV User-Agent and the token. At each seek it ends the watched segment. When a link from another app started the playback, the reports start at the first key press. The user can set history to off in Settings.
@@ -149,9 +161,10 @@ There are no unit tests now. Test each change on an Android TV device or emulato
 | "Sign in to confirm you're not a bot" or `LOGIN_REQUIRED` in playback | Look for `player:` lines with the `InnerTube` log tag. `InnerTube.signedOutPlayer()` (new visitor ID), `InnerTube.playback()` (client fallback), `yt/Clients.kt` (compare the client values with `INNERTUBE_CLIENTS` in yt-dlp). If each client fails, YouTube limits the network: wait some hours. |
 | Playback stops with `ERROR_CODE_IO_BAD_HTTP_STATUS` after a fallback to ANDROID_VR | The stream server wants a PoToken for that format. See "Playback". |
 | "The page needs to be reloaded" in the TV player request | `TvAppInfoProvider.signatureTimestamp()`. |
+| Search shows "No videos found" for each query | `yt/SearchParser.kt`. Save a signed-out TVHTML5 `search` reply and compare the JSON structure. |
 | Feeds are empty after a YouTube change | `yt/Feed.kt`, `yt/FeedItemsMapper.kt`. Save a reply and compare the JSON structure. |
 | An ad shows as a video card in a feed | Install a debug build. Run `adb logcat -s Feed`. Find the key that marks the ad in the `reply:` lines. Add the key to `yt/FeedAds.kt`. |
 | Videos do not show in Watch History | `yt/WatchReporter.kt`. Look for `TV tracking: status=` and `ping OK` in the log. |
 | A scraped value is rejected | The exception text names the value. Compare the live value with the pattern in `yt/Scraped.kt`. |
-| Add a setting | `settings/Settings.kt`, the Settings tab in `ui/MainActivity.kt`, `res/layout/activity_main.xml`, `res/values/strings.xml`. |
+| Add a setting | `settings/Settings.kt`, the Settings panel in `ui/MainActivity.kt`, `res/layout/activity_main.xml`, `res/values/strings.xml`. |
 | Make a release | Change `appVersion` in `app/build.gradle.kts`, merge, then push the tag `vX.Y.Z`. The Release workflow makes a draft release with notes from the commits. |

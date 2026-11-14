@@ -1,10 +1,10 @@
 # CleanTube TV
 
-A lean YouTube client for Android TV and Google TV, with fewer distractions. It shows your Home and Subscriptions feeds and plays one video at a time. It has no ads and skips sponsor segments.
+A lean YouTube client for Android TV and Google TV, with fewer distractions. It shows your Home and Subscriptions feeds, has a search function, and plays one video at a time. It has no ads and skips sponsor segments.
 
 What you do not get, on purpose:
 
-- No Shorts tab, no Trending and no notifications. Only Home and Subscriptions.
+- No Shorts tab, no Trending and no notifications. Only Home, Subscriptions and search.
 - No autoplay. The player stops at the end of a video.
 - No comments and no interaction reminders. SponsorBlock skips sponsor, self-promotion and "like and subscribe" segments.
 - No ads.
@@ -18,8 +18,9 @@ To explore the code with an AI coding agent, refer to [AGENTS.md](AGENTS.md).
 
 ## Features
 
-- Sign in with your Google account (YouTube TV code at `youtube.com/activate`). The Account tab shows the name and e-mail address of the account.
+- Sign in with your Google account (YouTube TV code at `youtube.com/activate`). The top of the Settings panel shows the name and e-mail address of the account.
 - Home feed and Subscriptions feed. A long video title scrolls when its card has the focus.
+- Search for videos. The results show only videos (no Shorts, channels or playlists).
 - Playback with no ads, up to 4K HDR. The quality button shows the current quality, for example `2160p60 HDR`. Push it to select **Auto** or one resolution, for example `1080p60 HD`. The player selects the best codec for that resolution.
 - Automatic skip of sponsor, self-promotion and interaction segments (SponsorBlock).
 - A speed button on the player control bar. Each push selects the next speed in your list.
@@ -123,14 +124,24 @@ CAUTION: A release APK and an APK that you built yourself have different signatu
 
 ## Sign in
 
-1. In the app, go to the **Account** tab and press **OK**.
-2. On your phone or computer, go to the URL that the TV shows.
-3. Enter the code that the TV shows.
-4. Approve the access. The TV goes back to the main screen.
+1. In the app, go to **Settings** (the gear icon at the right of the tab bar) and push **OK**.
+2. Select **Sign In** and push **OK**.
+3. On your phone or computer, go to the URL that the TV shows.
+4. Enter the code that the TV shows.
+5. Approve the access. The TV goes back to the main screen.
+
+## Search
+
+1. In the tab bar, go to the search field (the magnifier icon) and push **OK**. The on-screen keyboard opens.
+2. Enter the words.
+3. Select the search key on the keyboard. The results show below the tab bar.
+4. Push **Back** to go from the results to Home.
+
+You must sign in before you search. The app sends the search with your account, as the official YouTube TV app does. Thus your searches go into the YouTube search history of your account. The app does not store your searches and shows no suggestions. Voice search is not available.
 
 ## Settings
 
-Go to the **Settings** tab. Select a row and push **OK** to change it.
+Go to **Settings** (the gear icon at the right of the tab bar). The account and the **Sign In** or **Sign Out** button are at the top. Select a row and push **OK** to change it.
 
 | Setting | Function | Default |
 |---|---|---|
@@ -153,7 +164,7 @@ The app has an accessibility service, "CleanTube remote button". The service get
 
    CAUTION: The first command replaces the list of accessibility services. If you use other accessibility services, add them to the list. Separate the items with a colon (`:`).
 
-2. In CleanTube TV, go to the **Settings** tab and select **YouTube button opens CleanTube**.
+2. In CleanTube TV, go to **Settings** (the gear icon) and select **YouTube button opens CleanTube**.
 3. Push the YouTube button on the remote. The row shows the key code.
 
 If the YouTube app opens at step 3, the TV does not send this button to apps. Then you cannot change the button.
