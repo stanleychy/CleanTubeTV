@@ -10,7 +10,7 @@ import java.util.Locale
 /**
  * Reports playback to YouTube, so the video shows in Watch History with a resume point.
  *
- * The stream comes from a signed-out VISIONOS request, and its playbackTracking URLs
+ * The stream comes from a signed-out request (VISIONOS or ANDROID_VR), and its playbackTracking URLs
  * are not linked to the account. So, the same as SmartTube, this class makes one extra
  * player request as the signed-in TV client and uses the tracking URLs from it.
  * Call all methods off the main thread, from one thread only, so that the pings stay in order.

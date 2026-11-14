@@ -70,7 +70,9 @@ Use this procedure if you do not want to build the app.
    adb install -r CleanTubeTV-VERSION.apk
    ```
 
-CAUTION: A release APK and an APK that you built yourself have different signatures. To change from one to the other, uninstall the app first (`adb uninstall io.github.stanleychy.cleantubetv`). This deletes the sign-in and the settings.
+A debug APK that you build yourself is a different app for Android (`io.github.stanleychy.cleantubetv.debug`). It installs next to the release app and does not change it. Its name is **CleanTube TV Debug** and its icon is amber. It has its own sign-in and settings.
+
+CAUTION: A release APK from this page and a release APK that you built yourself have different signatures. To change from one to the other, uninstall the app first (`adb uninstall io.github.stanleychy.cleantubetv`). This deletes the sign-in and the settings.
 
 ## Requirements
 
@@ -88,6 +90,8 @@ CAUTION: A release APK and an APK that you built yourself have different signatu
    ```
 
 3. Find the APK at `app/build/outputs/apk/debug/app-debug.apk`.
+
+The debug build has the name **CleanTube TV Debug**, an amber icon and the package name `io.github.stanleychy.cleantubetv.debug`. In the `adb` commands of this document that contain the package name, add `.debug` to the package name for the debug build. Do not change the part after the `/`.
 
 ## Enable debugging on the TV
 
@@ -118,7 +122,7 @@ CAUTION: A release APK and an APK that you built yourself have different signatu
    adb install -r app/build/outputs/apk/debug/app-debug.apk
    ```
 
-4. On the TV, open **CleanTube TV** from the apps row.
+4. On the TV, open **CleanTube TV** (release build) or **CleanTube TV Debug** (debug build) from the apps row.
 
 ## Sign in
 
@@ -192,8 +196,23 @@ adb shell am start -a android.intent.action.VIEW -d "https://youtu.be/VIDEO_ID"
 To see the app log, run this command while the app runs:
 
 ```
-adb logcat -s Auth InnerTube PlayerActivity MainActivity SponsorBlock WatchReporter ExoPlayerImpl
+adb logcat -s Auth InnerTube Feed PlayerActivity MainActivity SponsorBlock WatchReporter ExoPlayerImpl
 ```
+
+If an ad shows as a video card in a feed, do these steps:
+
+1. Install a debug build of the app.
+2. Run this command:
+
+   ```
+   adb logcat -c && adb logcat -s Feed > feed-log.txt
+   ```
+
+3. Open the feed in the app and move to the ad.
+4. Stop the command with Ctrl+C.
+5. Open an issue and attach `feed-log.txt`.
+
+The `Feed` lines contain only the names of JSON keys and their counts. They contain no titles, video IDs or account data.
 
 ## Warning
 
