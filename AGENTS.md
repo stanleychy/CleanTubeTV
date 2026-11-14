@@ -63,7 +63,7 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 | `yt/DashManifest.kt` | Build a DASH MPD from the stream formats for ExoPlayer. |
 | `yt/WatchReporter.kt` | Send watch-time pings, so that videos show in Watch History with a resume point. |
 | `sponsor/SponsorBlock.kt` | Get skip segments with the SponsorBlock hash-prefix API (the full video ID is not sent). |
-| `ui/MainActivity.kt` | Tabs: Home, Subscriptions, Account, Settings. |
+| `ui/MainActivity.kt` | Tab bar: Home, Subscriptions and the Settings icon (gear) at the right. The Settings panel shows the account and the setting rows. |
 | `ui/PlayerActivity.kt` | ExoPlayer (Media3), quality and speed controls, SponsorBlock skip, watch reports. |
 | `ui/SignInActivity.kt` | Shows the activation code. |
 | `ui/LinkActivity.kt` | Opens `youtube.com`, `youtu.be` and `vnd.youtube:` links, with the start time. |
@@ -143,5 +143,5 @@ There are no unit tests now. Test each change on an Android TV device or emulato
 | Feeds are empty after a YouTube change | `yt/Feed.kt`, `yt/FeedItemsMapper.kt`. Save a reply and compare the JSON structure. |
 | Videos do not show in Watch History | `yt/WatchReporter.kt`. Look for `TV tracking: status=` and `ping OK` in the log. |
 | A scraped value is rejected | The exception text names the value. Compare the live value with the pattern in `yt/Scraped.kt`. |
-| Add a setting | `settings/Settings.kt`, the Settings tab in `ui/MainActivity.kt`, `res/layout/activity_main.xml`, `res/values/strings.xml`. |
+| Add a setting | `settings/Settings.kt`, the Settings panel in `ui/MainActivity.kt`, `res/layout/activity_main.xml`, `res/values/strings.xml`. |
 | Make a release | Change `appVersion` in `app/build.gradle.kts`, merge, then push the tag `vX.Y.Z`. The Release workflow makes a draft release with notes from the commits. |

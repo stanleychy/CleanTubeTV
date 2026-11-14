@@ -18,7 +18,7 @@ To explore the code with an AI coding agent, refer to [AGENTS.md](AGENTS.md).
 
 ## Features
 
-- Sign in with your Google account (YouTube TV code at `youtube.com/activate`). The Account tab shows the name and e-mail address of the account.
+- Sign in with your Google account (YouTube TV code at `youtube.com/activate`). The top of the Settings panel shows the name and e-mail address of the account.
 - Home feed and Subscriptions feed.
 - Playback with no ads, up to 4K HDR. The quality button shows the current quality, for example `2160p60 HDR`.
 - Automatic skip of sponsor, self-promotion and interaction segments (SponsorBlock).
@@ -122,14 +122,15 @@ CAUTION: A release APK and an APK that you built yourself have different signatu
 
 ## Sign in
 
-1. In the app, go to the **Account** tab and press **OK**.
-2. On your phone or computer, go to the URL that the TV shows.
-3. Enter the code that the TV shows.
-4. Approve the access. The TV goes back to the main screen.
+1. In the app, go to **Settings** (the gear icon at the right of the tab bar) and push **OK**.
+2. Select **Sign In** and push **OK**.
+3. On your phone or computer, go to the URL that the TV shows.
+4. Enter the code that the TV shows.
+5. Approve the access. The TV goes back to the main screen.
 
 ## Settings
 
-Go to the **Settings** tab. Select a row and push **OK** to change it.
+Go to **Settings** (the gear icon at the right of the tab bar). The account and the **Sign In** or **Sign Out** button are at the top. Select a row and push **OK** to change it.
 
 | Setting | Function | Default |
 |---|---|---|
@@ -152,7 +153,7 @@ The app has an accessibility service, "CleanTube remote button". The service get
 
    CAUTION: The first command replaces the list of accessibility services. If you use other accessibility services, add them to the list. Separate the items with a colon (`:`).
 
-2. In CleanTube TV, go to the **Settings** tab and select **YouTube button opens CleanTube**.
+2. In CleanTube TV, go to **Settings** (the gear icon) and select **YouTube button opens CleanTube**.
 3. Push the YouTube button on the remote. The row shows the key code.
 
 If the YouTube app opens at step 3, the TV does not send this button to apps. Then you cannot change the button.
