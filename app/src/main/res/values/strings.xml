@@ -43,4 +43,14 @@
     <string name="remote_learn_title">Push the YouTube button</string>
     <string name="remote_learn_message">Push the YouTube button on the remote now. If the YouTube app opens, the TV does not let apps change this button.</string>
     <string name="remote_clear">Clear</string>
+    <string name="setting_cast">Link with TV code (cast from a phone): %1$s</string>
+    <string name="cast_state_linked">Linked</string>
+    <string name="cast_state_not_linked">Not linked</string>
+    <string name="cast_step1">1. Open the YouTube app on your phone. Go to</string>
+    <string name="cast_path">Settings &gt; General &gt; Watch on TV</string>
+    <string name="cast_step2">2. Select \"Enter TV code\" and enter this code</string>
+    <string name="cast_waiting">Waiting for the phone. Keep this screen open.</string>
+    <string name="cast_linked">A phone is linked. Keep CleanTube TV open, then select the cast button in the YouTube app. You can link more phones with this code.</string>
+    <string name="cast_unlink">Unlink all phones</string>
+    <string name="cast_unlink_message">The TV forgets the link. To cast again, link the phone with a new code.</string>
 </resources>
