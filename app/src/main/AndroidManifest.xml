@@ -28,6 +28,9 @@
 
         <activity android:name=".ui.SignInActivity" android:exported="false" />
 
+        <!-- Shows the code for "Link with TV code" (cast from a phone). -->
+        <activity android:name=".ui.CastActivity" android:exported="false" />
+
         <activity
             android:name=".ui.PlayerActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize"

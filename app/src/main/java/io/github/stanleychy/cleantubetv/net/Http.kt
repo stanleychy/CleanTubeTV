@@ -1,6 +1,7 @@
 package io.github.stanleychy.cleantubetv.net
 
 import java.io.ByteArrayOutputStream
+import java.io.Closeable
 import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
@@ -49,6 +50,40 @@ object Http {
             return Response(code, text)
         } finally {
             conn.disconnect()
+        }
+    }
+
+    /**
+     * An open GET reply for a long poll. The caller reads [body] while the server sends data.
+     * [close] is safe from a different thread: it ends a read that waits for data.
+     */
+    class Stream(private val conn: HttpURLConnection, val code: Int, val body: InputStream?) : Closeable {
+        val ok get() = code in 200..299
+
+        override fun close() = conn.disconnect()
+    }
+
+    /**
+     * Opens a GET and returns the reply as a stream. Use it only for a long poll: [request] is the function
+     * for all other requests. Redirects are not followed. The caller must close the stream.
+     */
+    fun openStream(
+        url: String,
+        headers: Map<String, String> = emptyMap(),
+        connectTimeoutMs: Int = 15_000,
+        readTimeoutMs: Int = 30_000,
+    ): Stream {
+        val conn = URL(url).openConnection() as HttpURLConnection
+        try {
+            conn.connectTimeout = connectTimeoutMs
+            conn.readTimeout = readTimeoutMs
+            conn.instanceFollowRedirects = false
+            headers.forEach { (k, v) -> conn.setRequestProperty(k, v) }
+            val code = conn.responseCode
+            return Stream(conn, code, if (code in 200..299) conn.inputStream else null)
+        } catch (e: IOException) {
+            conn.disconnect()
+            throw e
         }
     }
 

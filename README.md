@@ -29,6 +29,7 @@ To explore the code with an AI coding agent, refer to [AGENTS.md](AGENTS.md).
 - Watch history, resume points and search history in your YouTube account. You can set this to off.
 - The YouTube button on the remote can open CleanTube TV.
 - YouTube links (`youtube.com`, `youtu.be`, `vnd.youtube:`) from other apps can open in CleanTube TV.
+- Cast from a phone: link the official YouTube app with a TV code, then send a video to CleanTube TV.
 
 ## Supply-chain rules
 
@@ -153,6 +154,7 @@ Go to **Settings** (the gear icon at the right of the tab bar). The account and 
 | Speed button | The speeds for the speed button on the player. Select one or more. | 1x, 1.5x, 2x |
 | Audio language | The audio track to use when a video has more than one. "Original" selects the original audio of the video. | Original |
 | YouTube button opens CleanTube | The remote key that opens CleanTube TV. Refer to "Use the YouTube button". | Not set |
+| Link with TV code (cast from a phone) | Shows the code that links the YouTube app on a phone. Refer to "Cast from a phone". | Not linked |
 | Subtitles | The subtitle language. If the video has no subtitles in this language, the app uses YouTube auto-translation. "Off" shows no subtitles. You can always use the CC button on the player. | Off |
 
 ## Use the YouTube button
@@ -174,6 +176,32 @@ The app has an accessibility service, "CleanTube remote button". The service get
 If the YouTube app opens at step 3, the TV does not send this button to apps. Then you cannot change the button.
 
 To stop the function, select the row again and select **Clear**. You can also turn off the service.
+
+## Cast from a phone
+
+You can send a video from the official YouTube app on a phone or tablet to CleanTube TV.
+
+Link the phone one time:
+
+1. In CleanTube TV, go to the **Settings** tab and select **Link with TV code**. The TV shows a 12-digit code.
+2. On the phone, open a video in the YouTube app. Select the cast button, then select **Link with TV code**.
+3. Enter the code. The TV shows "A phone is linked".
+
+Cast a video:
+
+1. Open CleanTube TV on the TV. Cast works only while the app is open.
+2. In the YouTube app on the phone, select the cast button. Then select **CleanTube TV**.
+3. Select a video. The video plays on the TV.
+4. Use the phone to play, pause, seek or stop the video.
+
+Limits:
+
+- CleanTube TV plays one video at a time. It plays the video that you select and ignores the queue, autoplay and the volume control of the phone.
+- The cast button does not find the TV on the network by itself. You must link the phone with a code first.
+- A cast video goes to your Watch History only after you push a key on the TV remote. This is the same rule as for links from other apps.
+- The link uses no Google account on the TV. YouTube can see that the account on the phone is connected to this TV.
+
+To remove the link, open **Link with TV code** again and select **Unlink all phones**.
 
 ## Open YouTube links
 
@@ -208,7 +236,7 @@ adb shell am start -a android.intent.action.VIEW -d "https://youtu.be/VIDEO_ID"
 To see the app log, run this command while the app runs:
 
 ```
-adb logcat -s Auth InnerTube Feed PlayerActivity MainActivity SponsorBlock WatchReporter ExoPlayerImpl
+adb logcat -s Auth InnerTube Feed PlayerActivity MainActivity SponsorBlock WatchReporter Lounge ExoPlayerImpl
 ```
 
 If an ad shows as a video card in a feed, do these steps:

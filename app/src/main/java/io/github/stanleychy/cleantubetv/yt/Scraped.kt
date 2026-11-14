@@ -47,15 +47,40 @@ object Scraped {
     /** The start of a thumbnail URL: https and a host directly under ytimg.com, for example i.ytimg.com. */
     private val THUMBNAIL_URL = Regex("^https://[a-z0-9-]{1,32}\\.ytimg\\.com/")
 
+    /** A playlist ID or a queue ID from a Lounge command. Live queue IDs on 2026-11-13 had 29 characters. */
+    private val LIST_ID = Regex("^[A-Za-z0-9_-]{1,128}$")
+
+    /** Lounge screen ID. The live value on 2026-11-13 had 26 characters (lowercase letters and digits). */
+    private val SCREEN_ID = Regex("^[A-Za-z0-9_-]{16,64}$")
+
+    /** Lounge token: URL-safe base64. The live value on 2026-11-13 had 119 characters. */
+    private val LOUNGE_TOKEN = Regex("^[A-Za-z0-9_-]{32,1024}$")
+
+    /** "Link with TV code" pairing code. The live value on 2026-11-13 had 12 digits. */
+    private val PAIRING_CODE = Regex("^[0-9]{6,16}$")
+
+    /** Lounge session IDs (SID and gsessionid). Live values on 2026-11-13 had 16 and 32 characters. */
+    private val LOUNGE_SESSION_ID = Regex("^[A-Za-z0-9_-]{8,128}$")
+
     fun version(v: String?) = v?.takeIf { VERSION.matches(it) }
+
+    fun videoId(v: String?) = v?.takeIf { VIDEO_ID.matches(it) }
+
+    fun listId(v: String?) = v?.takeIf { LIST_ID.matches(it) }
+
+    fun screenId(v: String?) = v?.takeIf { SCREEN_ID.matches(it) }
+
+    fun loungeToken(v: String?) = v?.takeIf { LOUNGE_TOKEN.matches(it) }
+
+    fun pairingCode(v: String?) = v?.takeIf { PAIRING_CODE.matches(it) }
+
+    fun loungeSessionId(v: String?) = v?.takeIf { LOUNGE_SESSION_ID.matches(it) }
 
     fun visitor(v: String?) = v?.takeIf { VISITOR.matches(it) }
 
     fun clientId(v: String?) = v?.takeIf { CLIENT_ID.matches(it) }
 
     fun clientSecret(v: String?) = v?.takeIf { CLIENT_SECRET.matches(it) }
-
-    fun videoId(v: String?) = v?.takeIf { VIDEO_ID.matches(it) }
 
     fun continuation(v: String?) = v?.takeIf { CONTINUATION.matches(it) }
 

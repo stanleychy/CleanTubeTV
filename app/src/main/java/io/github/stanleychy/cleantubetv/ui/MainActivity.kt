@@ -198,6 +198,7 @@ class MainActivity : Activity() {
         val subtitles = findViewById<TextView>(R.id.setting_subtitles)
         remoteRow = findViewById(R.id.setting_remote)
         remoteRow.setOnClickListener { setUpRemoteKey() }
+        findViewById<TextView>(R.id.setting_cast).setOnClickListener { startActivity(Intent(this, CastActivity::class.java)) }
         val pkg = packageManager.getPackageInfo(packageName, 0)
         findViewById<TextView>(R.id.setting_version).text =
             getString(R.string.setting_version, pkg.versionName, pkg.longVersionCode, getString(R.string.build_commit))
@@ -254,6 +255,11 @@ class MainActivity : Activity() {
             else -> getString(R.string.remote_key, KeyEvent.keyCodeToString(code).removePrefix("KEYCODE_"))
         }
         remoteRow.text = getString(R.string.setting_remote, state)
+        // The cast row is refreshed with the remote row: both can change while a different screen is open.
+        findViewById<TextView>(R.id.setting_cast).text = getString(
+            R.string.setting_cast,
+            getString(if (app.cast.isLinked) R.string.cast_state_linked else R.string.cast_state_not_linked),
+        )
     }
 
     /** Asks the user to turn on the service, or saves the next key that the service gets. */
