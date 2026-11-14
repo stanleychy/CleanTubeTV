@@ -1,5 +1,6 @@
 package io.github.stanleychy.cleantubetv.yt
 
+import android.util.Log
 import org.json.JSONObject
 
 data class Video(
@@ -21,14 +22,19 @@ data class FeedPage(val shelves: List<Shelf>, val continuation: String?)
  * tvBrowseRenderer > tvSurfaceContentRenderer > sectionListRenderer > shelfRenderer > horizontalListRenderer > tileRenderer
  * or a gridRenderer of tiles. The parser does not depend on the exact path: it finds shelves
  * and tiles anywhere in the response, so small layout changes do not break it.
- * Ads are never parsed: only video tiles become items.
+ * Only video tiles become items. The parser does not go into ad containers, and it drops
+ * the tiles that have an ad marker. The rules are in [FeedAds].
  */
 object FeedParser {
-    fun parse(response: JSONObject): FeedPage {
+    private const val TAG = "Feed"
+
+    /** With [debug], the log gets the structure of the reply. Use it only in a debug build. */
+    fun parse(response: JSONObject, debug: Boolean = false): FeedPage {
+        if (debug) FeedAds.describe(response).chunked(3000).forEach { Log.d(TAG, "reply: $it") }
         val shelves = mutableListOf<Shelf>()
         val seen = HashSet<String>()
 
-        walk(response, { key, obj ->
+        walkWithoutAds(response, { key, obj ->
             if (key == "shelfRenderer") {
                 val title = obj.obj("headerRenderer", "shelfHeaderRenderer", "title").text()
                     ?: obj.optJSONObject("title").text()
@@ -49,7 +55,7 @@ object FeedParser {
 
     private fun collectTiles(root: JSONObject, seen: MutableSet<String>): List<Video> {
         val out = mutableListOf<Video>()
-        walk(root, { key, obj ->
+        walkWithoutAds(root, { key, obj ->
             when (key) {
                 "tileRenderer" -> {
                     parseTile(obj)?.let { if (seen.add(it.id)) out += it }
@@ -66,6 +72,7 @@ object FeedParser {
     }
 
     private fun parseTile(t: JSONObject): Video? {
+        if (FeedAds.isAd(t)) return null
         val type = t.optString("contentType")
         if (type.isNotEmpty() && type != "TILE_CONTENT_TYPE_VIDEO") return null
         val id = t.obj("onSelectCommand", "watchEndpoint")?.optString("videoId")?.ifEmpty { null }
@@ -99,6 +106,7 @@ object FeedParser {
     }
 
     private fun parseVideoRenderer(v: JSONObject): Video? {
+        if (FeedAds.isAd(v)) return null
         val id = v.optString("videoId").ifEmpty { return null }
         val thumbs = v.obj("thumbnail")?.optJSONArray("thumbnails")?.objects().orEmpty()
         return Video(
@@ -123,7 +131,7 @@ object FeedParser {
     private fun findContinuation(response: JSONObject): String? {
         // Page-level continuation of the section list or grid. Shelf (row) continuations are ignored.
         var token: String? = null
-        walk(response, { key, obj ->
+        walkWithoutAds(response, { key, obj ->
             when (key) {
                 "horizontalListRenderer", "horizontalListContinuation", "shelfRenderer" -> false
                 "nextContinuationData" -> {

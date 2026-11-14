@@ -31,19 +31,30 @@ data class PlayerInfo(
     val formats: List<StreamFormat>,
     val hlsUrl: String?,
     val captions: List<CaptionTrack>,
+    /** The client that gave the stream URLs. YouTube refuses a stream request with the User-Agent of a different client. */
+    val client: Client,
 )
 
-class PlaybackException(message: String) : Exception(message)
+open class PlaybackException(message: String) : Exception(message)
+
+/**
+ * YouTube refused a signed-out player request with LOGIN_REQUIRED. The usual reason is the bot check
+ * ("Sign in to confirm you're not a bot"). An age-restricted or private video gives the same status.
+ */
+class SignInRequiredException(reason: String) : PlaybackException(reason)
 
 object PlayerParser {
-    fun parse(videoId: String, r: JSONObject): PlayerInfo {
+    const val LOGIN_REQUIRED = "LOGIN_REQUIRED"
+
+    /** Parses a player reply [r]. [client] is the client that sent the request. */
+    fun parse(videoId: String, r: JSONObject, client: Client): PlayerInfo {
         val ps = r.optJSONObject("playabilityStatus")
         val status = ps?.optString("status") ?: "UNKNOWN"
         if (status != "OK") {
             val reason = ps?.optString("reason")?.ifEmpty { null }
                 ?: ps?.obj("errorScreen", "playerErrorMessageRenderer", "reason").text()
                 ?: status
-            throw PlaybackException(reason)
+            throw if (status == LOGIN_REQUIRED) SignInRequiredException(reason) else PlaybackException(reason)
         }
         val details = r.optJSONObject("videoDetails")
         val sd = r.optJSONObject("streamingData")
@@ -67,6 +78,7 @@ object PlayerParser {
             formats = formats,
             hlsUrl = sd?.optString("hlsManifestUrl")?.ifEmpty { null },
             captions = captions,
+            client = client,
         )
     }
 
