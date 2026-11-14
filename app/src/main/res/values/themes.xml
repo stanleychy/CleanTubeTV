@@ -25,6 +25,17 @@
         <item name="android:textSize">18sp</item>
     </style>
 
+    <!-- A tab that shows an icon. The tint gives the icon the same colours as the tab text. -->
+    <style name="TabIcon" parent="Tab">
+        <item name="android:layout_width">56dp</item>
+        <item name="android:layout_height">44dp</item>
+        <item name="android:layout_marginEnd">0dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:tint">@color/tab_text</item>
+    </style>
+
     <style name="ActionButton">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
