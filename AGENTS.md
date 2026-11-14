@@ -65,6 +65,7 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 | `sponsor/SponsorBlock.kt` | Get skip segments with the SponsorBlock hash-prefix API (the full video ID is not sent). |
 | `ui/MainActivity.kt` | Tabs: Home, Subscriptions, Account, Settings. |
 | `ui/PlayerActivity.kt` | ExoPlayer (Media3), quality and speed controls, SponsorBlock skip, watch reports. |
+| `ui/QualityOptions.kt` | The rows of the quality menu: one for each resolution that the device can play. |
 | `ui/SignInActivity.kt` | Shows the activation code. |
 | `ui/LinkActivity.kt` | Opens `youtube.com`, `youtu.be` and `vnd.youtube:` links, with the start time. |
 | `remote/RemoteKeyService.kt` | Accessibility service that only filters keys. It opens the app with the remote YouTube button. |
