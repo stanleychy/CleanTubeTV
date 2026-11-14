@@ -8,6 +8,12 @@ package io.github.stanleychy.cleantubetv.yt
  *   and anything tied to the account.
  * - VISIONOS: returns direct stream URLs (no signature or "n" challenge, no PoToken)
  *   up to 4K HDR, without sign-in. Used for playback.
+ * - ANDROID_VR: the second client for playback, used when VISIONOS gives no stream. It returns direct
+ *   stream URLs without sign-in too. But the stream server refuses some requests that have no PoToken
+ *   (HTTP 403 on parts of the low-bitrate audio formats, verified 2026-11-13). Thus it is only a fallback.
+ *
+ * The values of VISIONOS and ANDROID_VR come from INNERTUBE_CLIENTS in yt-dlp
+ * (yt_dlp/extractor/youtube/_base.py). Compare them with that file when a client stops working.
  */
 data class Client(
     val name: String,
@@ -37,4 +43,26 @@ object Clients {
             "(KHTML, like Gecko) Version/26.0 Safari/605.1.15",
         extra = mapOf("deviceMake" to "Apple", "deviceModel" to "RealityDevice17,1"),
     )
+
+    /** Do not increase the version: a version after 1.65 can return only SABR streams (no direct URLs). */
+    val ANDROID_VR = Client(
+        name = "ANDROID_VR",
+        version = "1.65.10",
+        nameId = "28",
+        userAgent = "com.google.android.apps.youtube.vr.oculus/1.65.10 " +
+            "(Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip",
+        extra = mapOf(
+            "deviceMake" to "Oculus",
+            "deviceModel" to "Quest 3",
+            "androidSdkVersion" to 32,
+            "osName" to "Android",
+            "osVersion" to "12L",
+        ),
+    )
+
+    /**
+     * The signed-out clients for playback, in the sequence in which the app tries them.
+     * Each client must return direct stream URLs: the app does not run YouTube player JavaScript.
+     */
+    val PLAYBACK = listOf(VISIONOS, ANDROID_VR)
 }

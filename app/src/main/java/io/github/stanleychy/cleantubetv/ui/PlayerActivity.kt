@@ -43,10 +43,10 @@ import io.github.stanleychy.cleantubetv.app
 import io.github.stanleychy.cleantubetv.settings.Settings
 import io.github.stanleychy.cleantubetv.sponsor.Segment
 import io.github.stanleychy.cleantubetv.sponsor.SponsorBlock
-import io.github.stanleychy.cleantubetv.yt.Clients
 import io.github.stanleychy.cleantubetv.yt.DashManifest
 import io.github.stanleychy.cleantubetv.yt.PlayerInfo
 import io.github.stanleychy.cleantubetv.yt.PlayerParser
+import io.github.stanleychy.cleantubetv.yt.SignInRequiredException
 import io.github.stanleychy.cleantubetv.yt.WatchReporter
 import java.io.ByteArrayInputStream
 import java.util.concurrent.Executors
@@ -96,12 +96,13 @@ class PlayerActivity : Activity() {
         showMessage(intent.getStringExtra(EXTRA_TITLE) ?: getString(R.string.loading))
         val subtitleLanguage = app.settings.subtitleLanguage
         app.io.execute {
-            val result = runCatching { PlayerParser.parse(id, app.innerTube.player(id)) }
+            val result = runCatching { app.innerTube.playback(id).let { PlayerParser.parse(id, it.reply, it.client) } }
             runOnUiThread {
                 if (isFinishing) return@runOnUiThread
                 result.onSuccess { start(it, subtitleLanguage) }.onFailure { e ->
                     Log.w(TAG, "player request failed", e)
-                    showMessage(getString(R.string.play_error, e.message))
+                    val text = if (e is SignInRequiredException) R.string.play_error_sign_in_required else R.string.play_error
+                    showMessage(getString(text, e.message))
                 }
             }
         }
@@ -187,7 +188,7 @@ class PlayerActivity : Activity() {
 
     private fun buildSource(info: PlayerInfo, subtitleLanguage: String): MediaSource? {
         val http = DefaultHttpDataSource.Factory()
-            .setUserAgent(Clients.VISIONOS.userAgent)
+            .setUserAgent(info.client.userAgent)
             .setDefaultRequestProperties(mapOf("Origin" to "https://www.youtube.com", "Referer" to "https://www.youtube.com/"))
             .setConnectTimeoutMs(15_000)
             .setReadTimeoutMs(30_000)

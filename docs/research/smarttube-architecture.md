@@ -69,7 +69,10 @@ SmartTube has no ad-filter code. Ads do not show because the app reads only `str
 
 ## 8. YouTube restrictions (late 2026)
 
-- `tv` (TVHTML5) and `android_vr` do not need a PoToken. Logged-in TV playback is not DRM-protected.
+- `tv` (TVHTML5) does not need a PoToken. Logged-in TV playback is not DRM-protected.
+- `android_vr` gives direct URLs without a PoToken in the player request, but the stream server now refuses some requests without one. yt-dlp records HTTP 403 for all formats since 2026-08-17. A test on 2026-11-13 got HTTP 403 only on later ranges of the low-bitrate audio formats (itag 139 and 249).
+- `ios` and `android` give only SABR streams to a signed-out request (verified 2026-11-13).
+- A signed-out player request with no visitor ID, or with a visitor ID that YouTube does not accept, gets `LOGIN_REQUIRED` ("Sign in to confirm you're not a bot"). The reply to a request with no visitor ID has a new visitor ID, and the next request with that ID works (verified 2026-11-13).
 - YouTube forces SABR streaming more often. SmartTube issue #6293 (October 2026) shows a SABR reload loop.
 - The signature and `n` challenges still need a JavaScript engine. If you do not solve `n`, YouTube throttles the stream.
 - The TVHTML5 player request needs `playbackContext.contentPlaybackContext.signatureTimestamp`. Use the 8-digit value from `tv-player-ias-tcl.js` (for example `20753001`). The player URL is in `"player_url"` on `https://www.youtube.com/tv`. With no value, or with the 5-digit value, YouTube replies "UNPLAYABLE: The page needs to be reloaded" (verified 2026-11-01).
@@ -86,7 +89,7 @@ SmartTube has no ad-filter code. Ads do not show because the app reads only `str
 6. Encrypt the refresh token with an Android Keystore key.
 7. Use the SponsorBlock hash-prefix endpoint.
 8. No updater, no analytics, no crash reporting, no remote configuration.
-9. Account requests (browse, account, watch tracking) use TVHTML5 with OAuth. Playback uses a signed-out VISIONOS player request: it gives direct stream URLs up to 4K HDR with no signature or `n` challenge and no PoToken, so the app does not run YouTube player code. VISIONOS uses its own visitor ID and never gets the OAuth token, so YouTube cannot link it to the account. Fallback if VISIONOS stops: ANDROID_VR.
+9. Account requests (browse, account, watch tracking) use TVHTML5 with OAuth. Playback uses a signed-out VISIONOS player request: it gives direct stream URLs up to 4K HDR with no signature or `n` challenge and no PoToken, so the app does not run YouTube player code. VISIONOS uses its own visitor ID and never gets the OAuth token, so YouTube cannot link it to the account. After a bot-check reply, the app gets a new signed-out visitor ID. Fallback if VISIONOS gives no stream: ANDROID_VR, with its own visitor ID. It is a weak fallback (see section 8).
 
 ## Sources
 
