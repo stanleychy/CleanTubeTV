@@ -54,12 +54,13 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 | `auth/Auth.kt` | OAuth device flow (the code that the user enters at `youtube.com/activate`), token refresh. |
 | `auth/TokenStore.kt` | Refresh token, encrypted with an AES-GCM key in the Android Keystore. |
 | `net/Http.kt` | Small HTTP client on `HttpURLConnection`. |
-| `yt/Clients.kt` | InnerTube client identities (TVHTML5 and VISIONOS). Update these values when YouTube changes its API. |
+| `yt/Clients.kt` | InnerTube client identities (TVHTML5, VISIONOS and ANDROID_VR) and the sequence of the playback clients. Update these values when YouTube changes its API. |
 | `yt/TvAppInfo.kt` | Values read from `https://www.youtube.com/tv`: visitor ID, OAuth client, `signatureTimestamp`, client version. Cached for 24 hours. |
 | `yt/Scraped.kt` | Format and host checks for all values from YouTube. |
-| `yt/InnerTube.kt` | `browse`, `search`, `player` and `account/accounts_list` requests. Selects the visitor ID, version and token for each client. |
+| `yt/InnerTube.kt` | `browse`, `search`, `player` and `account/accounts_list` requests. Selects the visitor ID, version and token for each client. `playback()` does the bot-check recovery and the client fallback. |
 | `yt/SearchParser.kt` | Parse TV search replies (`lockupViewModel` items) into feed items. Only videos become items. |
 | `yt/Feed.kt`, `yt/FeedItemsMapper.kt` | Parse TV browse replies (Home, Subscriptions) into feed items. |
+| `yt/FeedAds.kt` | The rules that keep ads out of the feeds: ad containers and ad markers. |
 | `yt/PlayerInfo.kt` | Parse the player reply into stream formats. |
 | `yt/DashManifest.kt` | Build a DASH MPD from the stream formats for ExoPlayer. |
 | `yt/WatchReporter.kt` | Send watch-time pings, so that videos show in Watch History with a resume point. |
@@ -68,6 +69,7 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 | `ui/SearchField.kt` | The search field in the tab bar: on-screen keyboard, search action, focus with the D-pad. |
 | `ui/BackOverride.kt` | Back callback for Android 16 and later. Back from the search results goes to Home. |
 | `ui/PlayerActivity.kt` | ExoPlayer (Media3), quality and speed controls, SponsorBlock skip, watch reports. |
+| `ui/QualityOptions.kt` | The rows of the quality menu: one for each resolution that the device can play. |
 | `ui/SignInActivity.kt` | Shows the activation code. |
 | `ui/LinkActivity.kt` | Opens `youtube.com`, `youtu.be` and `vnd.youtube:` links, with the start time. |
 | `remote/RemoteKeyService.kt` | Accessibility service that only filters keys. It opens the app with the remote YouTube button. |
@@ -96,13 +98,19 @@ The token scope is YouTube only. It gives no access to Gmail, Drive or other Goo
 
 `InnerTube.browse()` sends a signed-in TVHTML5 request. `Feed.kt` parses the reply.
 
+YouTube puts ads in the feed as normal tiles in an `adSlotRenderer`. `FeedAds.kt` has the keys of the ad containers and the ad markers. The parser does not go into an ad container, and it drops a tile that has an ad marker. The rules use JSON keys only, not translated text. In a debug build, the `Feed` log tag shows the structure of each reply (keys and enum values only).
+
 ### Playback
 
-1. `InnerTube.player()` sends a signed-out VISIONOS request. VISIONOS gives direct stream URLs up to 4K HDR. It needs no signature or `n` challenge and no PoToken. Thus the app does not run YouTube player JavaScript.
+1. `InnerTube.playback()` sends a signed-out VISIONOS request. VISIONOS gives direct stream URLs up to 4K HDR. It needs no signature or `n` challenge and no PoToken. Thus the app does not run YouTube player JavaScript.
 2. `DashManifest` builds an MPD. ExoPlayer plays it.
 3. `SponsorBlock` gets the segments. `PlayerActivity` skips them.
 
-If VISIONOS stops working, the planned fallback is ANDROID_VR. The TV client needs the signature and `n` solver (the vendored EJS files).
+YouTube can reply `LOGIN_REQUIRED` ("Sign in to confirm you're not a bot") to a signed-out request. Then `InnerTube` discards the stored signed-out visitor ID, gets a new one from YouTube and sends the request again. It sends a maximum of three requests for each client.
+
+If VISIONOS gives no stream, `InnerTube.playback()` tries ANDROID_VR, the second client in `Clients.PLAYBACK`. `PlayerInfo.client` records the client that gave the streams, and `PlayerActivity` downloads the streams with the User-Agent of that client. If no client gives a stream, the player shows the reason from YouTube.
+
+ANDROID_VR is a weak fallback. Its player reply has direct stream URLs, but the stream server refuses some requests that have no PoToken (HTTP 403 on parts of the low-bitrate audio formats, verified 2026-11-13). No other client gives direct URLs without sign-in at this time: IOS and ANDROID give only SABR streams. The TV client needs the signature and `n` solver (the vendored EJS files).
 
 ### Search
 
@@ -122,12 +130,12 @@ The app does not store the queries and does not get search suggestions.
 YouTube does not permit third-party clients. YouTube can limit playback in the app or revoke the token. The design decreases the signals that YouTube can see:
 
 - Each request that is linked to the account uses one identity: TVHTML5, the TV User-Agent, the TV visitor ID and the current TV client version (read from `youtube.com/tv`).
-- Signed-out playback (VISIONOS) uses its own visitor ID and never gets the token. YouTube cannot link it to the account by visitor ID.
+- Signed-out playback (VISIONOS, ANDROID_VR) never gets the token. Each signed-out client uses its own visitor ID. YouTube cannot link it to the account by visitor ID.
 - Watch-time pings report only the parts that the user watched.
 
 Do not change these properties without a clear reason from the user. Examples of changes that increase the risk:
 
-- Sending the TV visitor ID or the token with a VISIONOS request.
+- Sending the TV visitor ID or the token with a signed-out request (VISIONOS, ANDROID_VR).
 - A fixed, old client version.
 - Bulk actions with the account token (for example, scripts that subscribe to many channels).
 
@@ -139,10 +147,12 @@ Requirements: JDK 17 or later, Android SDK with `platforms;android-36`, `build-t
 ./gradlew assembleDebug lintDebug
 adb connect TV_IP:PORT
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb logcat -s Auth InnerTube PlayerActivity MainActivity SponsorBlock WatchReporter ExoPlayerImpl
+adb logcat -s Auth InnerTube Feed PlayerActivity MainActivity SponsorBlock WatchReporter ExoPlayerImpl
 ```
 
-A debug build and a release build have different signatures. To change from one to the other on a device, uninstall the app first. This deletes the sign-in.
+A debug build has the package name `io.github.stanleychy.cleantubetv.debug`, the name "CleanTube TV Debug" and an amber icon (`app/src/debug/res`). It installs next to the release build and has its own sign-in. Do not uninstall the release build to install a debug build.
+
+CAUTION: Do not remove `applicationIdSuffix` from the debug build type in `app/build.gradle.kts`. Without it, a debug build can replace the release build only after an uninstall, which deletes the sign-in of the user.
 
 There are no unit tests now. Test each change on an Android TV device or emulator. Use the log tags above to see the result.
 
@@ -150,10 +160,12 @@ There are no unit tests now. Test each change on an Android TV device or emulato
 
 | Symptom or task | Where to look |
 |---|---|
-| "Sign in to confirm you're not a bot" or `LOGIN_REQUIRED` in playback | `InnerTube.player()` (visitor ID retry), `yt/Clients.kt` (VISIONOS values). |
+| "Sign in to confirm you're not a bot" or `LOGIN_REQUIRED` in playback | Look for `player:` lines with the `InnerTube` log tag. `InnerTube.signedOutPlayer()` (new visitor ID), `InnerTube.playback()` (client fallback), `yt/Clients.kt` (compare the client values with `INNERTUBE_CLIENTS` in yt-dlp). If each client fails, YouTube limits the network: wait some hours. |
+| Playback stops with `ERROR_CODE_IO_BAD_HTTP_STATUS` after a fallback to ANDROID_VR | The stream server wants a PoToken for that format. See "Playback". |
 | "The page needs to be reloaded" in the TV player request | `TvAppInfoProvider.signatureTimestamp()`. |
 | Search shows "No videos found" for each query | `yt/SearchParser.kt`. Save a signed-out TVHTML5 `search` reply and compare the JSON structure. |
 | Feeds are empty after a YouTube change | `yt/Feed.kt`, `yt/FeedItemsMapper.kt`. Save a reply and compare the JSON structure. |
+| An ad shows as a video card in a feed | Install a debug build. Run `adb logcat -s Feed`. Find the key that marks the ad in the `reply:` lines. Add the key to `yt/FeedAds.kt`. |
 | Videos do not show in Watch History | `yt/WatchReporter.kt`. Look for `TV tracking: status=` and `ping OK` in the log. |
 | A scraped value is rejected | The exception text names the value. Compare the live value with the pattern in `yt/Scraped.kt`. |
 | Add a setting | `settings/Settings.kt`, the Settings panel in `ui/MainActivity.kt`, `res/layout/activity_main.xml`, `res/values/strings.xml`. |

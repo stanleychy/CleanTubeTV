@@ -311,7 +311,7 @@ class MainActivity : Activity() {
         app.io.execute {
             val result = runCatching {
                 val resp = app.innerTube.browse(tab.browseId, token)
-                FeedParser.parse(resp)
+                FeedParser.parse(resp, debug = app.debuggable)
             }
             runOnUiThread { showPage(result, token, gen) }
         }
