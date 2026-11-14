@@ -2,7 +2,9 @@ package io.github.stanleychy.cleantubetv.ui
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlertDialog
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -12,6 +14,7 @@ import android.view.View
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.window.OnBackInvokedDispatcher
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -35,16 +38,15 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
-import androidx.media3.ui.TrackSelectionDialogBuilder
 import io.github.stanleychy.cleantubetv.R
 import io.github.stanleychy.cleantubetv.app
 import io.github.stanleychy.cleantubetv.settings.Settings
 import io.github.stanleychy.cleantubetv.sponsor.Segment
 import io.github.stanleychy.cleantubetv.sponsor.SponsorBlock
-import io.github.stanleychy.cleantubetv.yt.Clients
 import io.github.stanleychy.cleantubetv.yt.DashManifest
 import io.github.stanleychy.cleantubetv.yt.PlayerInfo
 import io.github.stanleychy.cleantubetv.yt.PlayerParser
+import io.github.stanleychy.cleantubetv.yt.SignInRequiredException
 import io.github.stanleychy.cleantubetv.yt.WatchReporter
 import java.io.ByteArrayInputStream
 import java.util.concurrent.Executors
@@ -67,6 +69,10 @@ class PlayerActivity : Activity() {
     /** One thread for watch reports, so that YouTube gets the pings in order. */
     private val reportQueue = Executors.newSingleThreadExecutor()
     private var speed = 1f
+    /** True from the Back key-down that hid the controls to its key-up. That push does not also close the player. */
+    private var backHidControls = false
+    /** The short side of the resolution that the user selected in the quality menu. Null is "Auto". */
+    private var qualitySide: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,22 +83,26 @@ class PlayerActivity : Activity() {
         qualityButton = findViewById(R.id.quality_button)
 
         playerView.setShowSubtitleButton(true)
+        // The controls stay hidden while the video loads: the message shows the title. See onIsPlayingChanged.
+        playerView.controllerAutoShow = false
         playerView.setControllerVisibilityListener(PlayerView.ControllerVisibilityListener { v ->
             qualityButton.visibility = v
         })
         qualityButton.setOnClickListener { showQualityDialog() }
         speedButton = addSpeedButton()
+        registerBackCallback()
 
         val id = intent.getStringExtra(EXTRA_ID) ?: return finish()
         showMessage(intent.getStringExtra(EXTRA_TITLE) ?: getString(R.string.loading))
         val subtitleLanguage = app.settings.subtitleLanguage
         app.io.execute {
-            val result = runCatching { PlayerParser.parse(id, app.innerTube.player(id)) }
+            val result = runCatching { app.innerTube.playback(id).let { PlayerParser.parse(id, it.reply, it.client) } }
             runOnUiThread {
                 if (isFinishing) return@runOnUiThread
                 result.onSuccess { start(it, subtitleLanguage) }.onFailure { e ->
                     Log.w(TAG, "player request failed", e)
-                    showMessage(getString(R.string.play_error, e.message))
+                    val text = if (e is SignInRequiredException) R.string.play_error_sign_in_required else R.string.play_error
+                    showMessage(getString(text, e.message))
                 }
             }
         }
@@ -161,6 +171,8 @@ class PlayerActivity : Activity() {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 if (isPlaying) {
                     message.visibility = View.GONE
+                    // The video started. From now on, a pause and the end of the video show the controls.
+                    playerView.controllerAutoShow = true
                     val r = reporter ?: return
                     val pos = p.currentPosition
                     reportQueue.execute { r.onStart(pos) }
@@ -178,7 +190,7 @@ class PlayerActivity : Activity() {
 
     private fun buildSource(info: PlayerInfo, subtitleLanguage: String): MediaSource? {
         val http = DefaultHttpDataSource.Factory()
-            .setUserAgent(Clients.VISIONOS.userAgent)
+            .setUserAgent(info.client.userAgent)
             .setDefaultRequestProperties(mapOf("Origin" to "https://www.youtube.com", "Referer" to "https://www.youtube.com/"))
             .setConnectTimeoutMs(15_000)
             .setReadTimeoutMs(30_000)
@@ -274,13 +286,40 @@ class PlayerActivity : Activity() {
         return "${side}p$fps" + if (hdr) " HDR" else ""
     }
 
+    /** A short list as in the YouTube quality menu: "Auto", then one row for each resolution, highest first. */
     private fun showQualityDialog() {
         val p = player ?: return
-        TrackSelectionDialogBuilder(this, getString(R.string.quality), p, C.TRACK_TYPE_VIDEO)
-            .setShowDisableOption(false)
-            .setAllowAdaptiveSelections(false)
-            .build()
+        val options = QualityOptions.from(p.currentTracks, p.trackSelectionParameters.preferredVideoMimeTypes)
+        val labels = listOf(getString(R.string.quality_auto)) + options.map { "${qualityLabel(it.best)} ${it.hint}".trim() }
+        // Index 0 is "Auto". It is also the mark when the selected resolution is not in the list.
+        val checked = options.indexOfFirst { it.side == qualitySide } + 1
+        AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(R.string.quality)
+            .setSingleChoiceItems(labels.toTypedArray(), checked) { d, i ->
+                selectQuality(p, options.getOrNull(i - 1))
+                d.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    /**
+     * Limits the video to the frame size of [option]. Null is "Auto": it removes the limit.
+     * A size limit, not a track override, keeps the selection in the track selector: the selector selects the
+     * best codec variant of that size that the device can play, and it uses a different size if no variant plays.
+     */
+    private fun selectQuality(p: Player, option: QualityOption?) {
+        qualitySide = option?.side
+        val params = p.trackSelectionParameters.buildUpon()
+        if (option == null) {
+            params.clearVideoSizeConstraints().setMinVideoSize(0, 0).setViewportSizeToPhysicalDisplaySize(true)
+        } else {
+            // The display size does not limit a resolution that the user selected.
+            params.setMaxVideoSize(option.maxWidth, option.maxHeight)
+                .setMinVideoSize(option.minWidth, option.minHeight)
+                .clearViewportSizeConstraints()
+        }
+        p.trackSelectionParameters = params.build()
     }
 
     private fun showMessage(text: String) {
@@ -288,17 +327,49 @@ class PlayerActivity : Activity() {
         message.visibility = View.VISIBLE
     }
 
-    // Back is not intercepted: it goes to super unchanged. TVs have no predictive back gesture.
+    /** Hides the controls if they show. Returns true if it hid them. */
+    private fun hideControls(): Boolean {
+        if (!playerView.isControllerFullyVisible) return false
+        playerView.hideController()
+        return true
+    }
+
+    /**
+     * Back as a key event. The return value is true for each event of the push that hid the controls (key-down,
+     * repeats and key-up), so that a long push does not also close the player.
+     */
+    private fun hideControlsOnBack(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) backHidControls = hideControls()
+        return backHidControls
+    }
+
+    /**
+     * Back as a callback. Android 16 and later send Back to this callback and not as a key event. Earlier
+     * versions ignore the callback and send the key event (see dispatchKeyEvent).
+     */
+    private fun registerBackCallback() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT) {
+            if (!hideControls()) finish()
+        }
+    }
+
+    // Back first hides the controls. With the controls hidden, it goes to super unchanged and closes the player.
+    // A dialog or a menu has its own window and gets Back before this activity. TVs have no predictive back gesture.
     @SuppressLint("GestureBackNavigation")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode == KeyEvent.KEYCODE_BACK) return super.dispatchKeyEvent(event)
+        if (event.keyCode == KeyEvent.KEYCODE_BACK) return hideControlsOnBack(event) || super.dispatchKeyEvent(event)
         // Any other key shows that the user watches: the watch reports of a link-started playback can start.
         pendingReporter?.let {
             pendingReporter = null
             reporter = it
             report()
         }
-        if (qualityButton.hasFocus()) return super.dispatchKeyEvent(event)
+        if (qualityButton.hasFocus()) {
+            // The quality button is not in the control bar. Start the hide timeout again, as the bar does for its keys.
+            playerView.showController()
+            return super.dispatchKeyEvent(event)
+        }
         return playerView.dispatchKeyEvent(event) || super.dispatchKeyEvent(event)
     }
 

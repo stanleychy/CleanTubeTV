@@ -7,15 +7,51 @@
     android:paddingTop="24dp"
     android:paddingEnd="48dp">
 
+    <!-- Tab bar: the feeds and the search field at the left, the Settings icon at the right edge. -->
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <TextView android:id="@+id/tab_home" style="@style/Tab" android:text="@string/tab_home" />
-        <TextView android:id="@+id/tab_subs" style="@style/Tab" android:text="@string/tab_subscriptions" />
-        <TextView android:id="@+id/tab_account" style="@style/Tab" android:text="@string/tab_account" />
-        <TextView android:id="@+id/tab_settings" style="@style/Tab" android:text="@string/tab_settings" />
+
+        <TextView
+            android:id="@+id/tab_subs"
+            style="@style/Tab"
+            android:nextFocusRight="@+id/tab_search"
+            android:text="@string/tab_subscriptions" />
+
+        <!-- Search: OK opens the on-screen keyboard. The search action of the keyboard starts the search. -->
+        <EditText
+            android:id="@+id/tab_search"
+            style="@style/Tab"
+            android:layout_width="280dp"
+            android:drawableStart="@drawable/ic_search"
+            android:drawablePadding="12dp"
+            android:drawableTint="@color/tab_text"
+            android:hint="@string/search_hint"
+            android:imeOptions="actionSearch"
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:maxLines="1"
+            android:nextFocusLeft="@id/tab_subs"
+            android:nextFocusRight="@+id/tab_settings"
+            android:selectAllOnFocus="true"
+            android:textColorHint="@color/tab_hint" />
+
+        <!-- Takes the free width, so that the Settings icon is at the right edge. -->
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <ImageView
+            android:id="@+id/tab_settings"
+            style="@style/TabIcon"
+            android:contentDescription="@string/tab_settings"
+            android:nextFocusLeft="@id/tab_search"
+            android:src="@drawable/ic_settings" />
     </LinearLayout>
 
     <FrameLayout
@@ -54,58 +90,6 @@
             android:paddingBottom="48dp"
             android:visibility="gone" />
 
-        <LinearLayout
-            android:id="@+id/account_panel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="48dp"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="16dp">
-
-                <ImageView
-                    android:id="@+id/account_photo"
-                    android:layout_width="96dp"
-                    android:layout_height="96dp"
-                    android:layout_marginEnd="24dp"
-                    android:contentDescription="@null"
-                    android:scaleType="centerCrop" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/account_name"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/text"
-                        android:textSize="28sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/account_detail"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textColor="@color/text_dim"
-                        android:textSize="20sp" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/account_button"
-                style="@style/ActionButton"
-                android:layout_marginTop="32dp" />
-        </LinearLayout>
-
         <ScrollView
             android:id="@+id/settings_panel"
             android:layout_width="match_parent"
@@ -118,6 +102,53 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:paddingBottom="48dp">
+
+                <!-- Account: photo, name, handle or byline. -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp">
+
+                    <ImageView
+                        android:id="@+id/account_photo"
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:layout_marginEnd="24dp"
+                        android:contentDescription="@null"
+                        android:scaleType="centerCrop" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/account_name"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text"
+                            android:textSize="28sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/account_detail"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:textColor="@color/text_dim"
+                            android:textSize="20sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Sign In or Sign Out. Up goes to the Settings icon, not to the nearest tab at the left. -->
+                <TextView
+                    android:id="@+id/account_button"
+                    style="@style/ActionButton"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="32dp"
+                    android:nextFocusUp="@id/tab_settings" />
 
                 <TextView android:id="@+id/setting_history" style="@style/SettingRow" />
                 <TextView android:id="@+id/setting_speeds" style="@style/SettingRow" />

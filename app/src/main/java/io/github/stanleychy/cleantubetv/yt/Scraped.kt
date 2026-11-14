@@ -35,8 +35,17 @@ object Scraped {
      */
     private val TRACKING_URL = Regex("^https://(s|www)\\.youtube\\.com/")
 
-    /** A video ID: 11 URL-safe base64 characters. */
+    /** Video ID, for example aqz-KE-bpKQ: 11 characters of URL-safe base64. */
     private val VIDEO_ID = Regex("^[A-Za-z0-9_-]{11}$")
+
+    /**
+     * Continuation token of a search reply: URL-safe base64, sometimes percent-encoded.
+     * Live values on 2026-11-13 had 560 to 808 characters. The length increases with the query.
+     */
+    private val CONTINUATION = Regex("^[A-Za-z0-9_%=-]{1,8192}$")
+
+    /** The start of a thumbnail URL: https and a host directly under ytimg.com, for example i.ytimg.com. */
+    private val THUMBNAIL_URL = Regex("^https://[a-z0-9-]{1,32}\\.ytimg\\.com/")
 
     /** A playlist ID or a queue ID from a Lounge command. Live queue IDs on 2026-11-13 had 29 characters. */
     private val LIST_ID = Regex("^[A-Za-z0-9_-]{1,128}$")
@@ -72,6 +81,12 @@ object Scraped {
     fun clientId(v: String?) = v?.takeIf { CLIENT_ID.matches(it) }
 
     fun clientSecret(v: String?) = v?.takeIf { CLIENT_SECRET.matches(it) }
+
+    fun continuation(v: String?) = v?.takeIf { CONTINUATION.matches(it) }
+
+    /** A thumbnail URL from a search reply, or null when it does not start with [THUMBNAIL_URL]. */
+    fun thumbnailUrl(url: String?) =
+        url?.takeIf { THUMBNAIL_URL.containsMatchIn(it) && it.none { c -> c.isWhitespace() || c == '\\' } }
 
     /** The TV player uses the 8-digit form, for example 20753001. */
     fun signatureTimestamp(v: Int?) = v?.takeIf { it in 10_000_000..99_999_999 }

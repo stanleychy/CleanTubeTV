@@ -1,10 +1,10 @@
 # CleanTube TV
 
-A lean YouTube client for Android TV and Google TV, with fewer distractions. It shows your Home and Subscriptions feeds and plays one video at a time. It has no ads and skips sponsor segments.
+A lean YouTube client for Android TV and Google TV, with fewer distractions. It shows your Home and Subscriptions feeds, has a search function, and plays one video at a time. It has no ads and skips sponsor segments.
 
 What you do not get, on purpose:
 
-- No Shorts tab, no Trending and no notifications. Only Home and Subscriptions.
+- No Shorts tab, no Trending and no notifications. Only Home, Subscriptions and search.
 - No autoplay. The player stops at the end of a video.
 - No comments and no interaction reminders. SponsorBlock skips sponsor, self-promotion and "like and subscribe" segments.
 - No ads.
@@ -18,11 +18,13 @@ To explore the code with an AI coding agent, refer to [AGENTS.md](AGENTS.md).
 
 ## Features
 
-- Sign in with your Google account (YouTube TV code at `youtube.com/activate`). The Account tab shows the name and e-mail address of the account.
-- Home feed and Subscriptions feed.
-- Playback with no ads, up to 4K HDR. The quality button shows the current quality, for example `2160p60 HDR`.
+- Sign in with your Google account (YouTube TV code at `youtube.com/activate`). The top of the Settings panel shows the name and e-mail address of the account.
+- Home feed and Subscriptions feed. A long video title scrolls when its card has the focus.
+- Search for videos. The results show only videos (no Shorts, channels or playlists).
+- Playback with no ads, up to 4K HDR. The quality button shows the current quality, for example `2160p60 HDR`. Push it to select **Auto** or one resolution, for example `1080p60 HD`. The player selects the best codec for that resolution.
 - Automatic skip of sponsor, self-promotion and interaction segments (SponsorBlock).
 - A speed button on the player control bar. Each push selects the next speed in your list.
+- The player controls stay hidden while a video loads, and they hide 3 seconds after the last key push. **Back** hides the controls. When the controls are hidden, **Back** closes the player.
 - Subtitles, audio tracks and live streams.
 - Watch history and resume points in your YouTube account. You can set this to off.
 - The YouTube button on the remote can open CleanTube TV.
@@ -71,7 +73,9 @@ Use this procedure if you do not want to build the app.
    adb install -r CleanTubeTV-VERSION.apk
    ```
 
-CAUTION: A release APK and an APK that you built yourself have different signatures. To change from one to the other, uninstall the app first (`adb uninstall io.github.stanleychy.cleantubetv`). This deletes the sign-in and the settings.
+A debug APK that you build yourself is a different app for Android (`io.github.stanleychy.cleantubetv.debug`). It installs next to the release app and does not change it. Its name is **CleanTube TV Debug** and its icon is amber. It has its own sign-in and settings.
+
+CAUTION: A release APK from this page and a release APK that you built yourself have different signatures. To change from one to the other, uninstall the app first (`adb uninstall io.github.stanleychy.cleantubetv`). This deletes the sign-in and the settings.
 
 ## Requirements
 
@@ -89,6 +93,8 @@ CAUTION: A release APK and an APK that you built yourself have different signatu
    ```
 
 3. Find the APK at `app/build/outputs/apk/debug/app-debug.apk`.
+
+The debug build has the name **CleanTube TV Debug**, an amber icon and the package name `io.github.stanleychy.cleantubetv.debug`. In the `adb` commands of this document that contain the package name, add `.debug` to the package name for the debug build. Do not change the part after the `/`.
 
 ## Enable debugging on the TV
 
@@ -119,18 +125,28 @@ CAUTION: A release APK and an APK that you built yourself have different signatu
    adb install -r app/build/outputs/apk/debug/app-debug.apk
    ```
 
-4. On the TV, open **CleanTube TV** from the apps row.
+4. On the TV, open **CleanTube TV** (release build) or **CleanTube TV Debug** (debug build) from the apps row.
 
 ## Sign in
 
-1. In the app, go to the **Account** tab and press **OK**.
-2. On your phone or computer, go to the URL that the TV shows.
-3. Enter the code that the TV shows.
-4. Approve the access. The TV goes back to the main screen.
+1. In the app, go to **Settings** (the gear icon at the right of the tab bar) and push **OK**.
+2. Select **Sign In** and push **OK**.
+3. On your phone or computer, go to the URL that the TV shows.
+4. Enter the code that the TV shows.
+5. Approve the access. The TV goes back to the main screen.
+
+## Search
+
+1. In the tab bar, go to the search field (the magnifier icon) and push **OK**. The on-screen keyboard opens.
+2. Enter the words.
+3. Select the search key on the keyboard. The results show below the tab bar.
+4. Push **Back** to go from the results to Home.
+
+You must sign in before you search. The app sends the search with your account, as the official YouTube TV app does. Thus your searches go into the YouTube search history of your account. The app does not store your searches and shows no suggestions. Voice search is not available.
 
 ## Settings
 
-Go to the **Settings** tab. Select a row and push **OK** to change it.
+Go to **Settings** (the gear icon at the right of the tab bar). The account and the **Sign In** or **Sign Out** button are at the top. Select a row and push **OK** to change it.
 
 | Setting | Function | Default |
 |---|---|---|
@@ -154,7 +170,7 @@ The app has an accessibility service, "CleanTube remote button". The service get
 
    CAUTION: The first command replaces the list of accessibility services. If you use other accessibility services, add them to the list. Separate the items with a colon (`:`).
 
-2. In CleanTube TV, go to the **Settings** tab and select **YouTube button opens CleanTube**.
+2. In CleanTube TV, go to **Settings** (the gear icon) and select **YouTube button opens CleanTube**.
 3. Push the YouTube button on the remote. The row shows the key code.
 
 If the YouTube app opens at step 3, the TV does not send this button to apps. Then you cannot change the button.
@@ -220,8 +236,23 @@ adb shell am start -a android.intent.action.VIEW -d "https://youtu.be/VIDEO_ID"
 To see the app log, run this command while the app runs:
 
 ```
-adb logcat -s Auth InnerTube PlayerActivity MainActivity SponsorBlock WatchReporter Lounge ExoPlayerImpl
+adb logcat -s Auth InnerTube Feed PlayerActivity MainActivity SponsorBlock WatchReporter Lounge ExoPlayerImpl
 ```
+
+If an ad shows as a video card in a feed, do these steps:
+
+1. Install a debug build of the app.
+2. Run this command:
+
+   ```
+   adb logcat -c && adb logcat -s Feed > feed-log.txt
+   ```
+
+3. Open the feed in the app and move to the ad.
+4. Stop the command with Ctrl+C.
+5. Open an issue and attach `feed-log.txt`.
+
+The `Feed` lines contain only the names of JSON keys and their counts. They contain no titles, video IDs or account data.
 
 ## Warning
 
