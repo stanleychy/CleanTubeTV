@@ -2,6 +2,7 @@ package io.github.stanleychy.cleantubetv.ui
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlertDialog
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -37,7 +38,6 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
-import androidx.media3.ui.TrackSelectionDialogBuilder
 import io.github.stanleychy.cleantubetv.R
 import io.github.stanleychy.cleantubetv.app
 import io.github.stanleychy.cleantubetv.settings.Settings
@@ -71,6 +71,8 @@ class PlayerActivity : Activity() {
     private var speed = 1f
     /** True from the Back key-down that hid the controls to its key-up. That push does not also close the player. */
     private var backHidControls = false
+    /** The short side of the resolution that the user selected in the quality menu. Null is "Auto". */
+    private var qualitySide: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -281,13 +283,40 @@ class PlayerActivity : Activity() {
         return "${side}p$fps" + if (hdr) " HDR" else ""
     }
 
+    /** A short list as in the YouTube quality menu: "Auto", then one row for each resolution, highest first. */
     private fun showQualityDialog() {
         val p = player ?: return
-        TrackSelectionDialogBuilder(this, getString(R.string.quality), p, C.TRACK_TYPE_VIDEO)
-            .setShowDisableOption(false)
-            .setAllowAdaptiveSelections(false)
-            .build()
+        val options = QualityOptions.from(p.currentTracks, p.trackSelectionParameters.preferredVideoMimeTypes)
+        val labels = listOf(getString(R.string.quality_auto)) + options.map { "${qualityLabel(it.best)} ${it.hint}".trim() }
+        // Index 0 is "Auto". It is also the mark when the selected resolution is not in the list.
+        val checked = options.indexOfFirst { it.side == qualitySide } + 1
+        AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(R.string.quality)
+            .setSingleChoiceItems(labels.toTypedArray(), checked) { d, i ->
+                selectQuality(p, options.getOrNull(i - 1))
+                d.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    /**
+     * Limits the video to the frame size of [option]. Null is "Auto": it removes the limit.
+     * A size limit, not a track override, keeps the selection in the track selector: the selector selects the
+     * best codec variant of that size that the device can play, and it uses a different size if no variant plays.
+     */
+    private fun selectQuality(p: Player, option: QualityOption?) {
+        qualitySide = option?.side
+        val params = p.trackSelectionParameters.buildUpon()
+        if (option == null) {
+            params.clearVideoSizeConstraints().setMinVideoSize(0, 0).setViewportSizeToPhysicalDisplaySize(true)
+        } else {
+            // The display size does not limit a resolution that the user selected.
+            params.setMaxVideoSize(option.maxWidth, option.maxHeight)
+                .setMinVideoSize(option.minWidth, option.minHeight)
+                .clearViewportSizeConstraints()
+        }
+        p.trackSelectionParameters = params.build()
     }
 
     private fun showMessage(text: String) {
