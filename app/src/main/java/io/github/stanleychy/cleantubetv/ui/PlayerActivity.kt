@@ -130,6 +130,8 @@ class PlayerActivity : Activity() {
         }
         val p = ExoPlayer.Builder(this).setTrackSelector(selector).build()
         player = p
+        // A linked phone can control the player of a video that it started (see CastController).
+        app.cast.onPlayerReady(this, p)
         playerView.player = withoutSpeedSetting(p)
         speed = settings.speeds.let { if (1f in it) 1f else it.first() }
         applySpeed()

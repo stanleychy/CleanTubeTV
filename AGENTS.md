@@ -11,6 +11,7 @@ This file is for AI coding agents (for example Claude Code, Codex, Cursor, GitHu
    - "Why does playback use the VISIONOS client and not the TV client?"
    - "What does the app send to YouTube when I watch a video?"
    - "Show me where SponsorBlock segments are skipped."
+   - "Explain how a phone sends a video to the TV with a TV code."
    - "Build the debug APK and install it on my TV at 192.168.1.50."
    - "YouTube playback stopped working. Find the cause in the log."
 
@@ -39,6 +40,8 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 - Never print, log or commit an OAuth token, a cookie, a keystore, a keystore password or `local.properties`.
 - Never send account data or the OAuth token to a host other than `www.youtube.com` (InnerTube, OAuth) and `s.youtube.com` (watch-time pings). The allowed hosts are in `yt/Scraped.kt`.
 - Send the OAuth token only from the TV client (`Clients.TV`). Never send it from a signed-out client.
+- Never send the OAuth token or a visitor ID on a Lounge request (`cast/LoungeApi.kt`). The Lounge session is signed out.
+- Never print or log a lounge token, a screen ID, a pairing code or a Lounge session ID.
 - Check each value that comes from a YouTube page or reply with `yt/Scraped.kt` before you put it in a header, a JSON body or a URL. Add a new check there for a new value.
 - Keep the visitor ID of the signed-in TV session separate from the visitor ID of signed-out playback (see "Account safety").
 - Write commit messages with Conventional Commits.
@@ -72,6 +75,12 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 | `ui/QualityOptions.kt` | The rows of the quality menu: one for each resolution that the device can play. |
 | `ui/SignInActivity.kt` | Shows the activation code. |
 | `ui/LinkActivity.kt` | Opens `youtube.com`, `youtu.be` and `vnd.youtube:` links, with the start time. |
+| `ui/CastActivity.kt` | Shows the pairing code for "Link with TV code" and the unlink button. |
+| `cast/LoungeApi.kt` | Signed-out requests to `https://www.youtube.com/api/lounge/`: screen ID, lounge token, pairing code, `bc/bind` (session, long poll, events). |
+| `cast/LoungeMessage.kt`, `cast/CastCommand.kt` | Parse the chunked `bind` reply into messages. Make the commands that the app obeys (play a video, play, pause, seek, stop, report state). |
+| `cast/LoungeSession.kt` | One Lounge connection: the long-poll thread with reconnect and the send thread. |
+| `cast/ScreenStore.kt` | The linked screen (screen ID, random device ID) in app-private SharedPreferences. |
+| `cast/CastController.kt`, `cast/CastPlayback.kt` | Start and stop the session with the app, open `PlayerActivity` for a cast video, and report the player state to the phone. |
 | `remote/RemoteKeyService.kt` | Accessibility service that only filters keys. It opens the app with the remote YouTube button. |
 | `settings/Settings.kt` | User settings in SharedPreferences. |
 | `vendor/ejs/` | Vendored yt-dlp EJS solver. Not in the APK and not used now. Kept for a future fallback. |
@@ -125,6 +134,16 @@ The app does not store the queries and does not get search suggestions.
 
 `WatchReporter` sends one extra signed-in TVHTML5 player request, only to get the `playbackTracking` URLs for the account. `Scraped.trackingUrl()` accepts only https URLs on `s.youtube.com` or `www.youtube.com`. It sends the pings with the TV User-Agent and the token. At each seek it ends the watched segment. When a link from another app started the playback, the reports start at the first key press. The user can set history to off in Settings.
 
+### Cast from a phone (Link with TV code)
+
+1. `CastActivity` calls `CastController.requestPairingCode()`. `LoungeApi` gets a screen ID (`pairing/generate_screen_id`), a lounge token (`pairing/get_lounge_token_batch`) and a 12-digit pairing code (`pairing/get_pairing_code`).
+2. The user enters the code in the official YouTube app on the phone (**Settings > General > Watch on TV > Enter TV code**).
+3. `LoungeSession` opens a session (`bc/bind`) and reads commands from a long poll. When a phone connects, `ScreenStore` keeps the screen, so the link stays after the app stops.
+4. `CastCommand` accepts `setPlaylist` and `setVideo` (play the selected video), `play`, `pause`, `seekTo`, `stopVideo`, `getNowPlaying`, `loungeStatus` and `remoteConnected`. The app ignores all other commands (queue, next, previous, autoplay, volume).
+5. `CastController` opens `PlayerActivity` for the video. `PlayerActivity` gives its player to `CastController.onPlayerReady()`. `CastPlayback` sends `nowPlaying` and `onStateChange` to the phone.
+
+The session runs only while an activity of the app is visible. The app has no service and no boot receiver. DIAL and SSDP discovery (the cast button finds the TV by itself) are not implemented.
+
 ## Account safety
 
 YouTube does not permit third-party clients. YouTube can limit playback in the app or revoke the token. The design decreases the signals that YouTube can see:
@@ -132,12 +151,16 @@ YouTube does not permit third-party clients. YouTube can limit playback in the a
 - Each request that is linked to the account uses one identity: TVHTML5, the TV User-Agent, the TV visitor ID and the current TV client version (read from `youtube.com/tv`).
 - Signed-out playback (VISIONOS, ANDROID_VR) never gets the token. Each signed-out client uses its own visitor ID. YouTube cannot link it to the account by visitor ID.
 - Watch-time pings report only the parts that the user watched.
+- The Lounge session (cast from a phone) is signed out. It gets no token, no visitor ID and no cookie. It uses a random device ID. YouTube can link the screen to the account on the phone, because that phone connects to it.
+- A cast video plays as a link-started playback (`EXTRA_FROM_LINK`): watch reports start at the first key press on the TV remote. The app does not use the credential (`ctt`) that the phone sends with a video.
+- The app reports only cast videos to the phone. It does not report a video that the user starts on the TV.
 
 Do not change these properties without a clear reason from the user. Examples of changes that increase the risk:
 
 - Sending the TV visitor ID or the token with a signed-out request (VISIONOS, ANDROID_VR).
 - A fixed, old client version.
 - Bulk actions with the account token (for example, scripts that subscribe to many channels).
+- Sending the token or a visitor ID on a Lounge request, or reporting each video that plays on the TV to the phone.
 
 ## Build, install and debug
 
@@ -147,7 +170,7 @@ Requirements: JDK 17 or later, Android SDK with `platforms;android-36`, `build-t
 ./gradlew assembleDebug lintDebug
 adb connect TV_IP:PORT
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb logcat -s Auth InnerTube Feed PlayerActivity MainActivity SponsorBlock WatchReporter ExoPlayerImpl
+adb logcat -s Auth InnerTube Feed PlayerActivity MainActivity SponsorBlock WatchReporter Lounge ExoPlayerImpl
 ```
 
 A debug build and a release build have different signatures. To change from one to the other on a device, uninstall the app first. This deletes the sign-in.
@@ -166,5 +189,7 @@ There are no unit tests now. Test each change on an Android TV device or emulato
 | An ad shows as a video card in a feed | Install a debug build. Run `adb logcat -s Feed`. Find the key that marks the ad in the `reply:` lines. Add the key to `yt/FeedAds.kt`. |
 | Videos do not show in Watch History | `yt/WatchReporter.kt`. Look for `TV tracking: status=` and `ping OK` in the log. |
 | A scraped value is rejected | The exception text names the value. Compare the live value with the pattern in `yt/Scraped.kt`. |
+| The phone does not connect, or a cast video does not start | `cast/LoungeSession.kt`, `cast/LoungeApi.kt`. Look for `session open`, `command` and `connection lost` with the `Lounge` tag. |
+| The phone shows a wrong player state | `cast/CastPlayback.kt` (the `nowPlaying` and `onStateChange` values). |
 | Add a setting | `settings/Settings.kt`, the Settings panel in `ui/MainActivity.kt`, `res/layout/activity_main.xml`, `res/values/strings.xml`. |
 | Make a release | Change `appVersion` in `app/build.gradle.kts`, merge, then push the tag `vX.Y.Z`. The Release workflow makes a draft release with notes from the commits. |
