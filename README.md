@@ -1,10 +1,10 @@
 # CleanTube TV
 
-A lean YouTube client for Android TV and Google TV, with fewer distractions. It shows your Home and Subscriptions feeds and plays one video at a time. It has no ads and skips sponsor segments.
+A lean YouTube client for Android TV and Google TV, with fewer distractions. It shows your Home and Subscriptions feeds, has a search function, and plays one video at a time. It has no ads and skips sponsor segments.
 
 What you do not get, on purpose:
 
-- No Shorts tab, no Trending and no notifications. Only Home and Subscriptions.
+- No Shorts tab, no Trending and no notifications. Only Home, Subscriptions and search.
 - No autoplay. The player stops at the end of a video.
 - No comments and no interaction reminders. SponsorBlock skips sponsor, self-promotion and "like and subscribe" segments.
 - No ads.
@@ -20,6 +20,7 @@ To explore the code with an AI coding agent, refer to [AGENTS.md](AGENTS.md).
 
 - Sign in with your Google account (YouTube TV code at `youtube.com/activate`). The top of the Settings panel shows the name and e-mail address of the account.
 - Home feed and Subscriptions feed.
+- Search for videos. The results show only videos (no Shorts, channels or playlists).
 - Playback with no ads, up to 4K HDR. The quality button shows the current quality, for example `2160p60 HDR`.
 - Automatic skip of sponsor, self-promotion and interaction segments (SponsorBlock).
 - A speed button on the player control bar. Each push selects the next speed in your list.
@@ -127,6 +128,15 @@ CAUTION: A release APK and an APK that you built yourself have different signatu
 3. On your phone or computer, go to the URL that the TV shows.
 4. Enter the code that the TV shows.
 5. Approve the access. The TV goes back to the main screen.
+
+## Search
+
+1. In the tab bar, go to the search field (the magnifier icon) and push **OK**. The on-screen keyboard opens.
+2. Enter the words.
+3. Select the search key on the keyboard. The results show below the tab bar.
+4. Push **Back** to go from the results to Home.
+
+You must sign in before you search. The app sends the search with your account, as the official YouTube TV app does. Thus your searches go into the YouTube search history of your account. The app does not store your searches and shows no suggestions. Voice search is not available.
 
 ## Settings
 

@@ -57,13 +57,16 @@ Obey these rules. Each rule has a reason in this file or in `CONTRIBUTING.md`.
 | `yt/Clients.kt` | InnerTube client identities (TVHTML5 and VISIONOS). Update these values when YouTube changes its API. |
 | `yt/TvAppInfo.kt` | Values read from `https://www.youtube.com/tv`: visitor ID, OAuth client, `signatureTimestamp`, client version. Cached for 24 hours. |
 | `yt/Scraped.kt` | Format and host checks for all values from YouTube. |
-| `yt/InnerTube.kt` | `browse`, `player` and `account/accounts_list` requests. Selects the visitor ID, version and token for each client. |
+| `yt/InnerTube.kt` | `browse`, `search`, `player` and `account/accounts_list` requests. Selects the visitor ID, version and token for each client. |
+| `yt/SearchParser.kt` | Parse TV search replies (`lockupViewModel` items) into feed items. Only videos become items. |
 | `yt/Feed.kt`, `yt/FeedItemsMapper.kt` | Parse TV browse replies (Home, Subscriptions) into feed items. |
 | `yt/PlayerInfo.kt` | Parse the player reply into stream formats. |
 | `yt/DashManifest.kt` | Build a DASH MPD from the stream formats for ExoPlayer. |
 | `yt/WatchReporter.kt` | Send watch-time pings, so that videos show in Watch History with a resume point. |
 | `sponsor/SponsorBlock.kt` | Get skip segments with the SponsorBlock hash-prefix API (the full video ID is not sent). |
-| `ui/MainActivity.kt` | Tab bar: Home, Subscriptions and the Settings icon (gear) at the right. The Settings panel shows the account and the setting rows. |
+| `ui/MainActivity.kt` | Tab bar: Home, Subscriptions, the search field and the Settings icon (gear) at the right. The Settings panel shows the account and the setting rows. |
+| `ui/SearchField.kt` | The search field in the tab bar: on-screen keyboard, search action, focus with the D-pad. |
+| `ui/BackOverride.kt` | Back callback for Android 16 and later. Back from the search results goes to Home. |
 | `ui/PlayerActivity.kt` | ExoPlayer (Media3), quality and speed controls, SponsorBlock skip, watch reports. |
 | `ui/SignInActivity.kt` | Shows the activation code. |
 | `ui/LinkActivity.kt` | Opens `youtube.com`, `youtu.be` and `vnd.youtube:` links, with the start time. |
@@ -100,6 +103,15 @@ The token scope is YouTube only. It gives no access to Gmail, Drive or other Goo
 3. `SponsorBlock` gets the segments. `PlayerActivity` skips them.
 
 If VISIONOS stops working, the planned fallback is ANDROID_VR. The TV client needs the signature and `n` solver (the vendored EJS files).
+
+### Search
+
+1. The user selects the search field in the tab bar and pushes OK. `SearchField` opens the on-screen keyboard.
+2. The search action of the keyboard starts the search. `InnerTube.search()` sends a signed-in TVHTML5 request, the same identity as the feeds. The official TV app does the same. Thus YouTube keeps the query in the search history of the account.
+3. `SearchParser` reads the `lockupViewModel` items. It keeps only videos (no Shorts, channels or playlists). `Scraped` checks the video ID, the thumbnail URL and the continuation token.
+4. `MainActivity` shows the results in the grid of the feeds. Back goes to Home.
+
+The app does not store the queries and does not get search suggestions.
 
 ### Watch history
 
@@ -140,6 +152,7 @@ There are no unit tests now. Test each change on an Android TV device or emulato
 |---|---|
 | "Sign in to confirm you're not a bot" or `LOGIN_REQUIRED` in playback | `InnerTube.player()` (visitor ID retry), `yt/Clients.kt` (VISIONOS values). |
 | "The page needs to be reloaded" in the TV player request | `TvAppInfoProvider.signatureTimestamp()`. |
+| Search shows "No videos found" for each query | `yt/SearchParser.kt`. Save a signed-out TVHTML5 `search` reply and compare the JSON structure. |
 | Feeds are empty after a YouTube change | `yt/Feed.kt`, `yt/FeedItemsMapper.kt`. Save a reply and compare the JSON structure. |
 | Videos do not show in Watch History | `yt/WatchReporter.kt`. Look for `TV tracking: status=` and `ping OK` in the log. |
 | A scraped value is rejected | The exception text names the value. Compare the live value with the pattern in `yt/Scraped.kt`. |
