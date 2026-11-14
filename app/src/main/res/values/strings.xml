@@ -23,7 +23,7 @@
     <string name="quality_auto">Auto</string>
     <string name="skipped_segment">Skipped segment: %1$s</string>
     <string name="speed">Playback speed</string>
-    <string name="setting_history">Watch history: %1$s</string>
+    <string name="setting_history">Watch and search history: %1$s</string>
     <string name="setting_speeds">Speed button: %1$s</string>
     <string name="setting_audio">Audio language: %1$s</string>
     <string name="setting_subtitles">Subtitles: %1$s</string>

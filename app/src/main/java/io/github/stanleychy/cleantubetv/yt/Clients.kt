@@ -21,6 +21,8 @@ data class Client(
     val nameId: String,
     val userAgent: String,
     val extra: Map<String, Any> = emptyMap(),
+    /** The name of the stored signed-out visitor ID. Two clients with the same [name] must have different keys. */
+    val visitorKey: String = name,
 )
 
 object Clients {
@@ -34,6 +36,13 @@ object Clients {
         nameId = "7",
         userAgent = TV_UA,
     )
+
+    /**
+     * TVHTML5 with no account. It has the name, version and User-Agent of [TV], but it is a signed-out client:
+     * it has its own visitor ID and it never gets the token. Search uses it when the history setting is off,
+     * so that YouTube cannot put the query in the search history of the account.
+     */
+    val TV_SIGNED_OUT = TV.copy(visitorKey = "TVHTML5_SIGNED_OUT")
 
     val VISIONOS = Client(
         name = "VISIONOS",

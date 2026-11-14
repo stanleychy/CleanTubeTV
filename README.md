@@ -26,7 +26,7 @@ To explore the code with an AI coding agent, refer to [AGENTS.md](AGENTS.md).
 - A speed button on the player control bar. Each push selects the next speed in your list.
 - The player controls stay hidden while a video loads, and they hide 3 seconds after the last key push. **Back** hides the controls. When the controls are hidden, **Back** closes the player.
 - Subtitles, audio tracks and live streams.
-- Watch history and resume points in your YouTube account. You can set this to off.
+- Watch history, resume points and search history in your YouTube account. You can set this to off.
 - The YouTube button on the remote can open CleanTube TV.
 - YouTube links (`youtube.com`, `youtu.be`, `vnd.youtube:`) from other apps can open in CleanTube TV.
 
@@ -141,7 +141,7 @@ The debug build has the name **CleanTube TV Debug**, an amber icon and the packa
 3. Select the search key on the keyboard. The results show below the tab bar.
 4. Push **Back** to go from the results to Home.
 
-You must sign in before you search. The app sends the search with your account, as the official YouTube TV app does. Thus your searches go into the YouTube search history of your account. The app does not store your searches and shows no suggestions. Voice search is not available.
+You must sign in before you search. When the setting **Watch and search history** is on, the app sends the search with your account, as the official YouTube TV app does. Thus your searches go into the YouTube search history of your account. When the setting is off, the app sends the search with no account: YouTube cannot put it in your search history, and the results are not personal. The app does not store your searches and shows no suggestions. Voice search is not available.
 
 ## Settings
 
@@ -149,7 +149,7 @@ Go to **Settings** (the gear icon at the right of the tab bar). The account and 
 
 | Setting | Function | Default |
 |---|---|---|
-| Watch history | When on, the app sends watch reports to YouTube. The video then shows in your Watch History. | On |
+| Watch and search history | When on, the app sends watch reports to YouTube, and the video then shows in your Watch History. The app also sends searches with your account. When off, the app sends no watch reports, and it sends searches with no account. | On |
 | Speed button | The speeds for the speed button on the player. Select one or more. | 1x, 1.5x, 2x |
 | Audio language | The audio track to use when a video has more than one. "Original" selects the original audio of the video. | Original |
 | YouTube button opens CleanTube | The remote key that opens CleanTube TV. Refer to "Use the YouTube button". | Not set |
