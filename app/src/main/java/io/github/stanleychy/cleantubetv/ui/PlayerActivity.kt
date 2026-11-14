@@ -77,6 +77,8 @@ class PlayerActivity : Activity() {
         qualityButton = findViewById(R.id.quality_button)
 
         playerView.setShowSubtitleButton(true)
+        // The controls stay hidden while the video loads: the message shows the title. See onIsPlayingChanged.
+        playerView.controllerAutoShow = false
         playerView.setControllerVisibilityListener(PlayerView.ControllerVisibilityListener { v ->
             qualityButton.visibility = v
         })
@@ -159,6 +161,8 @@ class PlayerActivity : Activity() {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 if (isPlaying) {
                     message.visibility = View.GONE
+                    // The video started. From now on, a pause and the end of the video show the controls.
+                    playerView.controllerAutoShow = true
                     val r = reporter ?: return
                     val pos = p.currentPosition
                     reportQueue.execute { r.onStart(pos) }
@@ -296,7 +300,11 @@ class PlayerActivity : Activity() {
             reporter = it
             report()
         }
-        if (qualityButton.hasFocus()) return super.dispatchKeyEvent(event)
+        if (qualityButton.hasFocus()) {
+            // The quality button is not in the control bar. Start the hide timeout again, as the bar does for its keys.
+            playerView.showController()
+            return super.dispatchKeyEvent(event)
+        }
         return playerView.dispatchKeyEvent(event) || super.dispatchKeyEvent(event)
     }
 
