@@ -19,7 +19,7 @@ To explore the code with an AI coding agent, refer to [AGENTS.md](AGENTS.md).
 ## Features
 
 - Sign in with your Google account (YouTube TV code at `youtube.com/activate`). The Account tab shows the name and e-mail address of the account.
-- Home feed and Subscriptions feed.
+- Home feed and Subscriptions feed. A long video title scrolls when its card has the focus.
 - Playback with no ads, up to 4K HDR. The quality button shows the current quality, for example `2160p60 HDR`.
 - Automatic skip of sponsor, self-promotion and interaction segments (SponsorBlock).
 - A speed button on the player control bar. Each push selects the next speed in your list.
