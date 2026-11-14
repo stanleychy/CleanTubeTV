@@ -7,7 +7,7 @@
     android:paddingTop="24dp"
     android:paddingEnd="48dp">
 
-    <!-- Tab bar: the feeds at the left, the Settings icon at the right edge. -->
+    <!-- Tab bar: the feeds and the search field at the left, the Settings icon at the right edge. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -19,8 +19,26 @@
         <TextView
             android:id="@+id/tab_subs"
             style="@style/Tab"
-            android:nextFocusRight="@+id/tab_settings"
+            android:nextFocusRight="@+id/tab_search"
             android:text="@string/tab_subscriptions" />
+
+        <!-- Search: OK opens the on-screen keyboard. The search action of the keyboard starts the search. -->
+        <EditText
+            android:id="@+id/tab_search"
+            style="@style/Tab"
+            android:layout_width="280dp"
+            android:drawableStart="@drawable/ic_search"
+            android:drawablePadding="12dp"
+            android:drawableTint="@color/tab_text"
+            android:hint="@string/search_hint"
+            android:imeOptions="actionSearch"
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:maxLines="1"
+            android:nextFocusLeft="@id/tab_subs"
+            android:nextFocusRight="@+id/tab_settings"
+            android:selectAllOnFocus="true"
+            android:textColorHint="@color/tab_hint" />
 
         <!-- Takes the free width, so that the Settings icon is at the right edge. -->
         <Space
@@ -32,7 +50,7 @@
             android:id="@+id/tab_settings"
             style="@style/TabIcon"
             android:contentDescription="@string/tab_settings"
-            android:nextFocusLeft="@id/tab_subs"
+            android:nextFocusLeft="@id/tab_search"
             android:src="@drawable/ic_settings" />
     </LinearLayout>
 

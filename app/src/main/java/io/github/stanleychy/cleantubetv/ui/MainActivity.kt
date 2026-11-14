@@ -1,5 +1,6 @@
 package io.github.stanleychy.cleantubetv.ui
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.ComponentName
@@ -18,11 +19,16 @@ import io.github.stanleychy.cleantubetv.remote.RemoteKeyService
 import io.github.stanleychy.cleantubetv.settings.Settings
 import io.github.stanleychy.cleantubetv.yt.AccountInfo
 import io.github.stanleychy.cleantubetv.yt.FeedItemsMapper
+import io.github.stanleychy.cleantubetv.yt.FeedPage
 import io.github.stanleychy.cleantubetv.yt.FeedParser
+import io.github.stanleychy.cleantubetv.yt.SearchParser
 
 class MainActivity : Activity() {
     private enum class Tab(val browseId: String?) {
-        HOME("default"), SUBSCRIPTIONS("FEsubscriptions"), SETTINGS(null)
+        HOME("default"), SUBSCRIPTIONS("FEsubscriptions"), SEARCH(null), SETTINGS(null);
+
+        /** True for a tab that shows videos in the grid. */
+        val hasVideos get() = this != SETTINGS
     }
 
     private lateinit var messagePanel: View
@@ -34,6 +40,10 @@ class MainActivity : Activity() {
     private lateinit var adapter: FeedAdapter
 
     private var current = Tab.HOME
+
+    /** The query of the Search tab. The app does not store it. */
+    private var query = ""
+    private lateinit var searchBack: BackOverride
     private var continuation: String? = null
     private var loading = false
     private var generation = 0
@@ -54,9 +64,13 @@ class MainActivity : Activity() {
         tabs = mapOf(
             Tab.HOME to findViewById(R.id.tab_home),
             Tab.SUBSCRIPTIONS to findViewById(R.id.tab_subs),
+            Tab.SEARCH to findViewById(R.id.tab_search),
             Tab.SETTINGS to findViewById(R.id.tab_settings),
         )
-        tabs.forEach { (tab, view) -> view.setOnClickListener { select(tab) } }
+        // The search field has its own click listener: OK opens the keyboard.
+        tabs.forEach { (tab, view) -> if (tab != Tab.SEARCH) view.setOnClickListener { select(tab) } }
+        SearchField(findViewById(R.id.tab_search)) { search(it) }
+        searchBack = BackOverride(this) { leaveSearch() }
 
         adapter = FeedAdapter(
             onClick = { v -> startActivity(Intent(this, PlayerActivity::class.java).putExtra(PlayerActivity.EXTRA_ID, v.id).putExtra(PlayerActivity.EXTRA_TITLE, v.title)) },
@@ -77,13 +91,32 @@ class MainActivity : Activity() {
         if (current == Tab.SETTINGS) showAccount()
         // The user can turn the service on or off in the system settings.
         refreshRemoteRow()
-        if ((current == Tab.HOME || current == Tab.SUBSCRIPTIONS) && app.auth.isSignedIn && adapter.itemCount == 0 && !loading) {
+        if (current.hasVideos && app.auth.isSignedIn && adapter.itemCount == 0 && !loading) {
             load(current, null)
         }
     }
 
+    /** Before Android 16, the system calls this function for Back. Refer to [BackOverride] for Android 16 and later. */
+    @Deprecated("Deprecated in Java")
+    @SuppressLint("GestureBackNavigation") // BackOverride does this task on Android 16 and later.
+    override fun onBackPressed() {
+        if (current == Tab.SEARCH) return leaveSearch()
+        @Suppress("DEPRECATION")
+        super.onBackPressed()
+    }
+
+    /** Shows the results for a query that the user entered in the search field. */
+    private fun search(text: String) {
+        query = text
+        select(Tab.SEARCH)
+    }
+
+    /** Back from the search results goes to Home. A second Back closes the app, as on the other tabs. */
+    private fun leaveSearch() = select(Tab.HOME)
+
     private fun select(tab: Tab) {
         current = tab
+        searchBack.enabled = tab == Tab.SEARCH
         tabs.forEach { (t, v) -> v.isSelected = t == tab }
         generation++
         continuation = null
@@ -274,39 +307,52 @@ class MainActivity : Activity() {
         loading = true
         val gen = generation
         if (token == null) showMessage(getString(R.string.loading))
+        if (tab == Tab.SEARCH) return loadSearch(token, gen)
         app.io.execute {
             val result = runCatching {
                 val resp = app.innerTube.browse(tab.browseId, token)
                 FeedParser.parse(resp)
             }
-            runOnUiThread {
-                if (gen != generation) return@runOnUiThread
-                loading = false
-                result.onSuccess { page ->
-                    continuation = page.continuation
-                    val items = FeedItemsMapper.toItems(page)
-                    if (token == null) {
-                        if (items.isEmpty()) {
-                            showMessage(getString(R.string.empty_feed))
-                        } else {
-                            show(grid)
-                            adapter.set(items)
-                            grid.post { grid.getChildAt(1)?.requestFocus() ?: grid.getChildAt(0)?.requestFocus() }
-                        }
-                    } else {
-                        adapter.append(items)
-                    }
-                }.onFailure { e ->
-                    Log.w(TAG, "browse failed", e)
-                    if (token == null) showMessage(getString(R.string.load_error, e.message))
-                }
-            }
+            runOnUiThread { showPage(result, token, gen) }
         }
+    }
+
+    /** Gets one page of search results. The thread gets a copy of the query, because the user can change it. */
+    private fun loadSearch(token: String?, gen: Int) {
+        val text = query
+        app.io.execute {
+            val result = runCatching { SearchParser.parse(app.innerTube.search(text, token)) }
+            runOnUiThread { showPage(result, token, gen) }
+        }
+    }
+
+    /** Shows a first page (no [token]) or adds a next page. Ignores a reply for a tab that the user left. */
+    private fun showPage(result: Result<FeedPage>, token: String?, gen: Int) {
+        if (gen != generation) return
+        loading = false
+        val page = result.getOrElse { e ->
+            Log.w(TAG, "load failed", e)
+            if (token == null) showMessage(getString(R.string.load_error, e.message))
+            return
+        }
+        continuation = page.continuation
+        val items = FeedItemsMapper.toItems(page)
+        if (token != null) return adapter.append(items)
+        if (items.isEmpty()) return showMessage(getString(R.string.empty_feed))
+        show(grid)
+        adapter.set(items)
+        grid.post { focusFirstCard() }
+    }
+
+    /** Moves the focus to the first video. A shelf header is not focusable, and search results have no header. */
+    private fun focusFirstCard() {
+        val first = (0 until grid.childCount).map { grid.getChildAt(it) }.firstOrNull { it.isFocusable }
+        first?.requestFocus()
     }
 
     private fun loadMore() {
         val token = continuation ?: return
-        if (current.browseId == null) return
+        if (!current.hasVideos) return
         continuation = null
         load(current, token)
     }
