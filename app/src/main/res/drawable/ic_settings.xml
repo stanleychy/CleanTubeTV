@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Gear icon for the Settings tab. An original drawing: 8 teeth and a centre hole. The view sets the colour with a tint. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M10.21,4.82 L10.44,2.12 L13.56,2.12 L13.79,4.82 L15.81,5.66 L17.88,3.91 L20.09,6.12 L18.34,8.19 L19.18,10.21 L21.88,10.44 L21.88,13.56 L19.18,13.79 L18.34,15.81 L20.09,17.88 L17.88,20.09 L15.81,18.34 L13.79,19.18 L13.56,21.88 L10.44,21.88 L10.21,19.18 L8.19,18.34 L6.12,20.09 L3.91,17.88 L5.66,15.81 L4.82,13.79 L2.12,13.56 L2.12,10.44 L4.82,10.21 L5.66,8.19 L3.91,6.12 L6.12,3.91 L8.19,5.66 Z M8.80,12.00 a3.2,3.2 0 1,0 6.4,0 a3.2,3.2 0 1,0 -6.4,0 Z" />
+</vector>
