@@ -23,6 +23,7 @@ To explore the code with an AI coding agent, refer to [AGENTS.md](AGENTS.md).
 - Playback with no ads, up to 4K HDR. The quality button shows the current quality, for example `2160p60 HDR`.
 - Automatic skip of sponsor, self-promotion and interaction segments (SponsorBlock).
 - A speed button on the player control bar. Each push selects the next speed in your list.
+- The player controls stay hidden while a video loads, and they hide 3 seconds after the last key push. **Back** hides the controls. When the controls are hidden, **Back** closes the player.
 - Subtitles, audio tracks and live streams.
 - Watch history and resume points in your YouTube account. You can set this to off.
 - The YouTube button on the remote can open CleanTube TV.
