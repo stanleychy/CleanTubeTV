@@ -73,7 +73,9 @@ Use this procedure if you do not want to build the app.
    adb install -r CleanTubeTV-VERSION.apk
    ```
 
-CAUTION: A release APK and an APK that you built yourself have different signatures. To change from one to the other, uninstall the app first (`adb uninstall io.github.stanleychy.cleantubetv`). This deletes the sign-in and the settings.
+A debug APK that you build yourself is a different app for Android (`io.github.stanleychy.cleantubetv.debug`). It installs next to the release app and does not change it. Its name is **CleanTube TV Debug** and its icon is amber. It has its own sign-in and settings.
+
+CAUTION: A release APK from this page and a release APK that you built yourself have different signatures. To change from one to the other, uninstall the app first (`adb uninstall io.github.stanleychy.cleantubetv`). This deletes the sign-in and the settings.
 
 ## Requirements
 
@@ -91,6 +93,8 @@ CAUTION: A release APK and an APK that you built yourself have different signatu
    ```
 
 3. Find the APK at `app/build/outputs/apk/debug/app-debug.apk`.
+
+The debug build has the name **CleanTube TV Debug**, an amber icon and the package name `io.github.stanleychy.cleantubetv.debug`. In the `adb` commands of this document that contain the package name, add `.debug` to the package name for the debug build. Do not change the part after the `/`.
 
 ## Enable debugging on the TV
 
@@ -121,7 +125,7 @@ CAUTION: A release APK and an APK that you built yourself have different signatu
    adb install -r app/build/outputs/apk/debug/app-debug.apk
    ```
 
-4. On the TV, open **CleanTube TV** from the apps row.
+4. On the TV, open **CleanTube TV** (release build) or **CleanTube TV Debug** (debug build) from the apps row.
 
 ## Sign in
 
