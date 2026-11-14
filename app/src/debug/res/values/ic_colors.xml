@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icon and banner colors of the debug build: amber, not the teal of the release build. -->
+<resources>
+    <color name="icon_background">#16110A</color>
+    <color name="icon_ring">#8A5A12</color>
+    <color name="icon_play">#FBBF24</color>
+</resources>

@@ -130,7 +130,9 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb logcat -s Auth InnerTube PlayerActivity MainActivity SponsorBlock WatchReporter ExoPlayerImpl
 ```
 
-A debug build and a release build have different signatures. To change from one to the other on a device, uninstall the app first. This deletes the sign-in.
+A debug build has the package name `io.github.stanleychy.cleantubetv.debug`, the name "CleanTube TV Debug" and an amber icon (`app/src/debug/res`). It installs next to the release build and has its own sign-in. Do not uninstall the release build to install a debug build.
+
+CAUTION: Do not remove `applicationIdSuffix` from the debug build type in `app/build.gradle.kts`. Without it, a debug build can replace the release build only after an uninstall, which deletes the sign-in of the user.
 
 There are no unit tests now. Test each change on an Android TV device or emulator. Use the log tags above to see the result.
 
