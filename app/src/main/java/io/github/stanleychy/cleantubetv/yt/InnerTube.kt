@@ -24,15 +24,19 @@ class InnerTube(private val context: Context, private val auth: Auth) {
     }
 
     /**
-     * Search as the signed-in TV client, the same identity as the feeds. The official TV app does the same.
+     * Search as the TV client. Pass a query for the first page, or a continuation token that [Scraped.continuation] accepted.
+     *
+     * With [withAccount], the request is signed in, the same identity as the feeds. The official TV app does the same.
      * Thus YouTube keeps the query in the search history of the account.
-     * Pass a query for the first page, or a continuation token that [Scraped.continuation] accepted.
+     * Without [withAccount], the request is signed out ([Clients.TV_SIGNED_OUT]): it has no token and a different
+     * visitor ID. Thus YouTube cannot link the query to the account. The results are then not personal.
      */
-    fun search(query: String, continuation: String? = null): JSONObject {
-        val body = JSONObject().put("context", context(Clients.TV, forBrowse = true))
+    fun search(query: String, continuation: String? = null, withAccount: Boolean): JSONObject {
+        val client = if (withAccount) Clients.TV else Clients.TV_SIGNED_OUT
+        val body = JSONObject().put("context", context(client, forBrowse = true))
         // The query is user input. JSONObject.put escapes it.
         if (continuation != null) body.put("continuation", continuation) else body.put("query", query)
-        return call("search", Clients.TV, body, withAuth = true)
+        return call("search", client, body, withAuth = withAccount)
     }
 
     /**
@@ -151,11 +155,14 @@ class InnerTube(private val context: Context, private val auth: Auth) {
         prefs.edit().remove(anonVisitorKey(c)).apply()
     }
 
-    private fun anonVisitorKey(c: Client) = "${KEY_ANON_VISITOR}_${c.name}"
+    private fun anonVisitorKey(c: Client) = "${KEY_ANON_VISITOR}_${c.visitorKey}"
+
+    /** True for the TV app with or without the account. The two have the same version, Referer and browse context. */
+    private fun isTvApp(c: Client) = c.name == Clients.TV.name
 
     /** The TV client version comes from the YouTube TV web app. The value in [Clients] is the fallback. */
     private fun versionFor(c: Client): String =
-        if (c == Clients.TV) TvAppInfoProvider.get(context).clientVersion ?: c.version else c.version
+        if (isTvApp(c)) TvAppInfoProvider.get(context).clientVersion ?: c.version else c.version
 
     private val prefs = context.getSharedPreferences("innertube", Context.MODE_PRIVATE).also {
         // Earlier versions kept one visitor ID for all signed-out clients in this key. It is not used now.
@@ -173,7 +180,7 @@ class InnerTube(private val context: Context, private val auth: Auth) {
             .put("utcOffsetMinutes", TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 60_000)
         visitorFor(c)?.let { client.put("visitorData", it) }
         c.extra.forEach { (k, v) -> client.put(k, v) }
-        if (forBrowse && c == Clients.TV) {
+        if (forBrowse && isTvApp(c)) {
             client.put("tvAppInfo", JSONObject().put("appQuality", "TV_APP_QUALITY_FULL_ANIMATION").put("zylonLeftNav", true))
             client.put("webpSupport", false)
         }
@@ -191,7 +198,7 @@ class InnerTube(private val context: Context, private val auth: Auth) {
             "Origin" to "https://www.youtube.com",
         )
         visitorFor(c)?.let { headers["X-Goog-Visitor-Id"] = it }
-        if (c == Clients.TV) headers["Referer"] = "https://www.youtube.com/tv"
+        if (isTvApp(c)) headers["Referer"] = "https://www.youtube.com/tv"
         // Never send the account token as a signed-out client.
         if (withAuth && c == Clients.TV) auth.accessToken()?.let { headers["Authorization"] = "Bearer $it" }
         val r = Http.request(
