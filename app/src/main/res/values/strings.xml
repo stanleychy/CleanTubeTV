@@ -46,9 +46,9 @@
     <string name="setting_cast">Link with TV code (cast from a phone): %1$s</string>
     <string name="cast_state_linked">Linked</string>
     <string name="cast_state_not_linked">Not linked</string>
-    <string name="cast_step1">1. Open the YouTube app on your phone. Go to</string>
-    <string name="cast_path">Settings &gt; General &gt; Watch on TV</string>
-    <string name="cast_step2">2. Select \"Enter TV code\" and enter this code</string>
+    <string name="cast_step1">1. Open a video in the YouTube app on your phone. Select</string>
+    <string name="cast_path">the cast button &gt; Link with TV code</string>
+    <string name="cast_step2">2. Enter this code</string>
     <string name="cast_waiting">Waiting for the phone. Keep this screen open.</string>
     <string name="cast_linked">A phone is linked. Keep CleanTube TV open, then select the cast button in the YouTube app. You can link more phones with this code.</string>
     <string name="cast_unlink">Unlink all phones</string>
