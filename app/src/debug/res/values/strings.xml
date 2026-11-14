@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The debug build installs next to the release build. This name shows which app is which. -->
+<resources>
+    <string name="app_name" translatable="false">CleanTube TV Debug</string>
+</resources>

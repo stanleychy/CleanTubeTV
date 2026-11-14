@@ -77,6 +77,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            // A debug build is a different app for Android: it installs next to the release build.
+            // Thus a debug build cannot replace the release build or delete its sign-in.
+            // The debug source set (app/src/debug) gives it a different name and icon colors.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
             if (releaseKeystore != null) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
